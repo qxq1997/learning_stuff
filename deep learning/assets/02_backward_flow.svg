@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="520" viewBox="0 0 980 520">
+  <defs>
+    <marker id="arrow_fwd" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#4a5568"/>
+    </marker>
+    <marker id="arrow_bwd" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#c53030"/>
+    </marker>
+  </defs>
+
+  <rect width="980" height="520" fill="#f7fafc"/>
+  <text x="40" y="50" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#1a202c">
+    Forward vs Backward
+  </text>
+  <text x="40" y="78" font-family="Arial, sans-serif" font-size="16" fill="#4a5568">
+    Forward computes prediction. Backward computes gradient responsibility for each parameter.
+  </text>
+
+  <rect x="70" y="170" width="180" height="70" rx="12" fill="#bee3f8" stroke="#3182ce" stroke-width="2"/>
+  <text x="125" y="212" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#1a365d">Input x</text>
+
+  <rect x="320" y="170" width="210" height="70" rx="12" fill="#c6f6d5" stroke="#38a169" stroke-width="2"/>
+  <text x="355" y="200" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#22543d">Layer 1</text>
+  <text x="355" y="220" font-family="Arial, sans-serif" font-size="14" fill="#22543d">z1 = W1x + b1</text>
+
+  <rect x="600" y="170" width="210" height="70" rx="12" fill="#fbd38d" stroke="#dd6b20" stroke-width="2"/>
+  <text x="635" y="200" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#7b341e">Layer 2</text>
+  <text x="635" y="220" font-family="Arial, sans-serif" font-size="14" fill="#7b341e">y_hat = W2h + b2</text>
+
+  <rect x="830" y="170" width="110" height="70" rx="12" fill="#fed7e2" stroke="#d53f8c" stroke-width="2"/>
+  <text x="864" y="212" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#702459">Loss L</text>
+
+  <line x1="250" y1="205" x2="320" y2="205" stroke="#4a5568" stroke-width="3" marker-end="url(#arrow_fwd)"/>
+  <line x1="530" y1="205" x2="600" y2="205" stroke="#4a5568" stroke-width="3" marker-end="url(#arrow_fwd)"/>
+  <line x1="810" y1="205" x2="830" y2="205" stroke="#4a5568" stroke-width="3" marker-end="url(#arrow_fwd)"/>
+
+  <text x="340" y="150" font-family="Arial, sans-serif" font-size="14" fill="#4a5568">Forward path</text>
+
+  <line x1="830" y1="300" x2="810" y2="300" stroke="#c53030" stroke-width="3" marker-end="url(#arrow_bwd)"/>
+  <line x1="600" y1="300" x2="530" y2="300" stroke="#c53030" stroke-width="3" marker-end="url(#arrow_bwd)"/>
+  <line x1="320" y1="300" x2="250" y2="300" stroke="#c53030" stroke-width="3" marker-end="url(#arrow_bwd)"/>
+
+  <rect x="830" y="265" width="110" height="70" rx="12" fill="#fff5f5" stroke="#c53030" stroke-width="2"/>
+  <text x="841" y="295" font-family="Arial, sans-serif" font-size="13" fill="#742a2a">dL/dy_hat</text>
+  <text x="841" y="315" font-family="Arial, sans-serif" font-size="13" fill="#742a2a">error signal</text>
+
+  <rect x="600" y="265" width="210" height="70" rx="12" fill="#fff5f5" stroke="#c53030" stroke-width="2"/>
+  <text x="615" y="292" font-family="Arial, sans-serif" font-size="13" fill="#742a2a">dL/dW2, dL/db2</text>
+  <text x="615" y="314" font-family="Arial, sans-serif" font-size="13" fill="#742a2a">assign responsibility to layer 2</text>
+
+  <rect x="320" y="265" width="210" height="70" rx="12" fill="#fff5f5" stroke="#c53030" stroke-width="2"/>
+  <text x="335" y="292" font-family="Arial, sans-serif" font-size="13" fill="#742a2a">dL/dW1, dL/db1</text>
+  <text x="335" y="314" font-family="Arial, sans-serif" font-size="13" fill="#742a2a">chain rule back to layer 1</text>
+
+  <rect x="70" y="265" width="180" height="70" rx="12" fill="#fff5f5" stroke="#c53030" stroke-width="2"/>
+  <text x="95" y="295" font-family="Arial, sans-serif" font-size="13" fill="#742a2a">gradient reaches</text>
+  <text x="95" y="315" font-family="Arial, sans-serif" font-size="13" fill="#742a2a">earlier computation</text>
+
+  <text x="340" y="258" font-family="Arial, sans-serif" font-size="14" fill="#c53030">Backward path</text>
+
+  <rect x="120" y="390" width="740" height="90" rx="14" fill="#edf2f7" stroke="#a0aec0" stroke-width="2"/>
+  <text x="150" y="424" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#2d3748">
+    Core idea
+  </text>
+  <text x="150" y="448" font-family="Arial, sans-serif" font-size="15" fill="#2d3748">
+    Forward tells us "how wrong". Backward tells us "who caused the error and how much to adjust".
+  </text>
+</svg>

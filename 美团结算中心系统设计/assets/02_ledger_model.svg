@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420">
+  <defs>
+    <marker id="arrow3" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#4a5568"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="420" fill="#f8fafc"/>
+  <text x="40" y="48" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#1a202c">账务模型：Account + Entry + Balance</text>
+  <text x="40" y="78" font-family="Arial, sans-serif" font-size="16" fill="#4a5568">流水负责记录事实，余额负责快速查询，账户负责定义资金归属和语义。</text>
+
+  <rect x="100" y="130" rx="16" ry="16" width="220" height="180" fill="#bee3f8" stroke="#3182ce" stroke-width="2"/>
+  <text x="170" y="168" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#1a365d">Account</text>
+  <text x="130" y="200" font-family="Arial, sans-serif" font-size="15" fill="#1a365d">merchant_receivable</text>
+  <text x="130" y="224" font-family="Arial, sans-serif" font-size="15" fill="#1a365d">rider_receivable</text>
+  <text x="130" y="248" font-family="Arial, sans-serif" font-size="15" fill="#1a365d">platform_commission</text>
+  <text x="130" y="272" font-family="Arial, sans-serif" font-size="15" fill="#1a365d">subsidy_cost</text>
+
+  <rect x="470" y="100" rx="16" ry="16" width="260" height="240" fill="#fed7d7" stroke="#e53e3e" stroke-width="2"/>
+  <text x="555" y="138" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#742a2a">Entry</text>
+  <text x="500" y="170" font-family="Arial, sans-serif" font-size="15" fill="#742a2a">entry_id</text>
+  <text x="500" y="194" font-family="Arial, sans-serif" font-size="15" fill="#742a2a">account_id</text>
+  <text x="500" y="218" font-family="Arial, sans-serif" font-size="15" fill="#742a2a">biz_type / biz_id</text>
+  <text x="500" y="242" font-family="Arial, sans-serif" font-size="15" fill="#742a2a">amount / direction</text>
+  <text x="500" y="266" font-family="Arial, sans-serif" font-size="15" fill="#742a2a">idempotency_key</text>
+  <text x="500" y="300" font-family="Arial, sans-serif" font-size="15" fill="#742a2a">append-only</text>
+
+  <rect x="880" y="130" rx="16" ry="16" width="220" height="180" fill="#c6f6d5" stroke="#38a169" stroke-width="2"/>
+  <text x="955" y="168" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#22543d">Balance</text>
+  <text x="915" y="200" font-family="Arial, sans-serif" font-size="15" fill="#22543d">available_balance</text>
+  <text x="915" y="224" font-family="Arial, sans-serif" font-size="15" fill="#22543d">pending_balance</text>
+  <text x="915" y="248" font-family="Arial, sans-serif" font-size="15" fill="#22543d">frozen_balance</text>
+  <text x="915" y="272" font-family="Arial, sans-serif" font-size="15" fill="#22543d">projection from entries</text>
+
+  <line x1="320" y1="220" x2="470" y2="220" stroke="#4a5568" stroke-width="3" marker-end="url(#arrow3)"/>
+  <line x1="730" y1="220" x2="880" y2="220" stroke="#4a5568" stroke-width="3" marker-end="url(#arrow3)"/>
+
+  <text x="345" y="205" font-family="Arial, sans-serif" font-size="14" fill="#4a5568">定义账户语义</text>
+  <text x="755" y="205" font-family="Arial, sans-serif" font-size="14" fill="#4a5568">汇总为余额投影</text>
+
+  <rect x="170" y="340" rx="12" ry="12" width="860" height="48" fill="#edf2f7" stroke="#a0aec0" stroke-width="2"/>
+  <text x="210" y="371" font-family="Arial, sans-serif" font-size="16" fill="#2d3748">核心原则：历史账务只追加不随便改；退款、赔付、冲销通过逆向分录表达。</text>
+</svg>

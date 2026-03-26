@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420">
+  <defs>
+    <marker id="arrow2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#4a5568"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="420" fill="#f8fafc"/>
+  <text x="40" y="48" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#1a202c">订单参与方与资金分配关系</text>
+  <text x="40" y="78" font-family="Arial, sans-serif" font-size="16" fill="#4a5568">用户支付只是起点，真正复杂的是平台、商家、骑手、渠道和补贴承担方之间的经济归属解释。</text>
+
+  <rect x="80" y="160" rx="16" ry="16" width="150" height="90" fill="#bee3f8" stroke="#3182ce" stroke-width="2"/>
+  <text x="135" y="198" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#1a365d">用户</text>
+  <text x="118" y="224" font-family="Arial, sans-serif" font-size="14" fill="#1a365d">支付 27/28 元</text>
+
+  <rect x="360" y="130" rx="16" ry="16" width="200" height="150" fill="#faf089" stroke="#d69e2e" stroke-width="2"/>
+  <text x="425" y="170" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#744210">平台</text>
+  <text x="390" y="200" font-family="Arial, sans-serif" font-size="15" fill="#744210">佣金收入</text>
+  <text x="390" y="224" font-family="Arial, sans-serif" font-size="15" fill="#744210">补贴成本</text>
+  <text x="390" y="248" font-family="Arial, sans-serif" font-size="15" fill="#744210">渠道在途资金</text>
+
+  <rect x="700" y="90" rx="16" ry="16" width="180" height="90" fill="#c6f6d5" stroke="#38a169" stroke-width="2"/>
+  <text x="760" y="128" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#22543d">商家</text>
+  <text x="732" y="154" font-family="Arial, sans-serif" font-size="14" fill="#22543d">待结算/已结算</text>
+
+  <rect x="700" y="230" rx="16" ry="16" width="180" height="90" fill="#fed7d7" stroke="#e53e3e" stroke-width="2"/>
+  <text x="760" y="268" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#742a2a">骑手</text>
+  <text x="732" y="294" font-family="Arial, sans-serif" font-size="14" fill="#742a2a">配送收入待结</text>
+
+  <rect x="980" y="160" rx="16" ry="16" width="150" height="90" fill="#e9d8fd" stroke="#805ad5" stroke-width="2"/>
+  <text x="1015" y="198" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#44337a">渠道/银行</text>
+  <text x="1008" y="224" font-family="Arial, sans-serif" font-size="14" fill="#44337a">入账/打款</text>
+
+  <line x1="230" y1="205" x2="360" y2="205" stroke="#4a5568" stroke-width="3" marker-end="url(#arrow2)"/>
+  <text x="250" y="190" font-family="Arial, sans-serif" font-size="14" fill="#4a5568">用户支付</text>
+
+  <line x1="560" y1="160" x2="700" y2="135" stroke="#4a5568" stroke-width="3" marker-end="url(#arrow2)"/>
+  <text x="585" y="132" font-family="Arial, sans-serif" font-size="14" fill="#4a5568">商家应收</text>
+
+  <line x1="560" y1="250" x2="700" y2="275" stroke="#4a5568" stroke-width="3" marker-end="url(#arrow2)"/>
+  <text x="585" y="292" font-family="Arial, sans-serif" font-size="14" fill="#4a5568">骑手应得</text>
+
+  <line x1="560" y1="205" x2="980" y2="205" stroke="#4a5568" stroke-width="3" marker-end="url(#arrow2)"/>
+  <text x="725" y="190" font-family="Arial, sans-serif" font-size="14" fill="#4a5568">渠道清算/付款</text>
+
+  <rect x="90" y="320" rx="12" ry="12" width="1030" height="58" fill="#edf2f7" stroke="#a0aec0" stroke-width="2"/>
+  <text x="120" y="356" font-family="Arial, sans-serif" font-size="16" fill="#2d3748">结算系统的职责不是只算出一个数字，而是把这些参与方之间的经济归属和资金状态解释清楚、记清楚、对清楚。</text>
+</svg>

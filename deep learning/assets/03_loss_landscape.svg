@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="520" viewBox="0 0 980 520">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#4a5568"/>
+    </marker>
+  </defs>
+
+  <rect width="980" height="520" fill="#f8fafc"/>
+  <text x="40" y="52" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#1a202c">
+    Loss Landscape and Gradient Descent
+  </text>
+  <text x="40" y="82" font-family="Arial, sans-serif" font-size="16" fill="#4a5568">
+    参数像在山地里下坡，梯度告诉你当前位置最陡下降方向。
+  </text>
+
+  <path d="M120,390 C180,240 260,220 340,320 C410,405 500,420 590,300 C665,205 745,210 860,360"
+        fill="none" stroke="#2d3748" stroke-width="4"/>
+
+  <circle cx="240" cy="265" r="8" fill="#e53e3e"/>
+  <circle cx="420" cy="392" r="8" fill="#e53e3e"/>
+  <circle cx="620" cy="280" r="8" fill="#e53e3e"/>
+  <circle cx="780" cy="255" r="8" fill="#e53e3e"/>
+
+  <line x1="240" y1="265" x2="300" y2="300" stroke="#4a5568" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="420" y1="392" x2="470" y2="360" stroke="#4a5568" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="620" y1="280" x2="665" y2="245" stroke="#4a5568" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <text x="206" y="246" font-family="Arial, sans-serif" font-size="14" fill="#2d3748">step t</text>
+  <text x="392" y="418" font-family="Arial, sans-serif" font-size="14" fill="#2d3748">step t+1</text>
+  <text x="592" y="305" font-family="Arial, sans-serif" font-size="14" fill="#2d3748">step t+2</text>
+
+  <rect x="70" y="120" width="280" height="86" rx="12" fill="#e6fffa" stroke="#38b2ac" stroke-width="2"/>
+  <text x="92" y="150" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#234e52">
+    Loss: L(theta)
+  </text>
+  <text x="92" y="174" font-family="Arial, sans-serif" font-size="14" fill="#234e52">
+    theta = 参数集合 (w, b, ...)
+  </text>
+  <text x="92" y="194" font-family="Arial, sans-serif" font-size="14" fill="#234e52">
+    目标：让 L 尽量小
+  </text>
+
+  <rect x="650" y="120" width="260" height="86" rx="12" fill="#fffaf0" stroke="#dd6b20" stroke-width="2"/>
+  <text x="672" y="150" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#7b341e">
+    Update Rule
+  </text>
+  <text x="672" y="174" font-family="Arial, sans-serif" font-size="14" fill="#7b341e">
+    theta = theta - lr * dL/dtheta
+  </text>
+  <text x="672" y="194" font-family="Arial, sans-serif" font-size="14" fill="#7b341e">
+    lr 过大易震荡，过小收敛慢
+  </text>
+
+  <line x1="210" y1="206" x2="210" y2="245" stroke="#718096" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="780" y1="206" x2="740" y2="240" stroke="#718096" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <text x="90" y="475" font-family="Arial, sans-serif" font-size="15" fill="#4a5568">
+    直觉：每一步都不一定到全局最优，但长期应沿着损失下降方向前进。
+  </text>
+</svg>

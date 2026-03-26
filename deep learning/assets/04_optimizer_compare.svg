@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="540" viewBox="0 0 980 540">
+  <defs>
+    <marker id="arrow_sgd" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#2b6cb0"/>
+    </marker>
+    <marker id="arrow_mom" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#2f855a"/>
+    </marker>
+    <marker id="arrow_adam" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#c53030"/>
+    </marker>
+  </defs>
+
+  <rect width="980" height="540" fill="#f8fafc"/>
+  <text x="40" y="52" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#1a202c">
+    Optimizer Trajectory Comparison
+  </text>
+  <text x="40" y="82" font-family="Arial, sans-serif" font-size="16" fill="#4a5568">
+    Same loss landscape, different update strategies lead to different paths.
+  </text>
+
+  <path d="M100,430 C180,260 260,250 340,340 C420,430 510,450 610,320 C700,200 800,210 900,390"
+        fill="none" stroke="#2d3748" stroke-width="4"/>
+  <text x="110" y="460" font-family="Arial, sans-serif" font-size="14" fill="#4a5568">高损失</text>
+  <text x="845" y="245" font-family="Arial, sans-serif" font-size="14" fill="#4a5568">低损失区域</text>
+
+  <circle cx="170" cy="310" r="6" fill="#2b6cb0"/>
+  <circle cx="250" cy="280" r="6" fill="#2b6cb0"/>
+  <circle cx="330" cy="345" r="6" fill="#2b6cb0"/>
+  <circle cx="420" cy="415" r="6" fill="#2b6cb0"/>
+  <line x1="170" y1="310" x2="248" y2="281" stroke="#2b6cb0" stroke-width="2.5" marker-end="url(#arrow_sgd)"/>
+  <line x1="250" y1="280" x2="328" y2="344" stroke="#2b6cb0" stroke-width="2.5" marker-end="url(#arrow_sgd)"/>
+  <line x1="330" y1="345" x2="418" y2="413" stroke="#2b6cb0" stroke-width="2.5" marker-end="url(#arrow_sgd)"/>
+
+  <circle cx="170" cy="310" r="6" fill="#2f855a"/>
+  <circle cx="245" cy="290" r="6" fill="#2f855a"/>
+  <circle cx="320" cy="320" r="6" fill="#2f855a"/>
+  <circle cx="420" cy="380" r="6" fill="#2f855a"/>
+  <circle cx="540" cy="365" r="6" fill="#2f855a"/>
+  <line x1="170" y1="310" x2="243" y2="291" stroke="#2f855a" stroke-width="2.5" marker-end="url(#arrow_mom)"/>
+  <line x1="245" y1="290" x2="318" y2="319" stroke="#2f855a" stroke-width="2.5" marker-end="url(#arrow_mom)"/>
+  <line x1="320" y1="320" x2="418" y2="379" stroke="#2f855a" stroke-width="2.5" marker-end="url(#arrow_mom)"/>
+  <line x1="420" y1="380" x2="538" y2="365" stroke="#2f855a" stroke-width="2.5" marker-end="url(#arrow_mom)"/>
+
+  <circle cx="170" cy="310" r="6" fill="#c53030"/>
+  <circle cx="230" cy="295" r="6" fill="#c53030"/>
+  <circle cx="300" cy="300" r="6" fill="#c53030"/>
+  <circle cx="390" cy="350" r="6" fill="#c53030"/>
+  <circle cx="520" cy="352" r="6" fill="#c53030"/>
+  <circle cx="690" cy="260" r="6" fill="#c53030"/>
+  <line x1="170" y1="310" x2="228" y2="296" stroke="#c53030" stroke-width="2.5" marker-end="url(#arrow_adam)"/>
+  <line x1="230" y1="295" x2="298" y2="301" stroke="#c53030" stroke-width="2.5" marker-end="url(#arrow_adam)"/>
+  <line x1="300" y1="300" x2="388" y2="349" stroke="#c53030" stroke-width="2.5" marker-end="url(#arrow_adam)"/>
+  <line x1="390" y1="350" x2="518" y2="352" stroke="#c53030" stroke-width="2.5" marker-end="url(#arrow_adam)"/>
+  <line x1="520" y1="352" x2="688" y2="261" stroke="#c53030" stroke-width="2.5" marker-end="url(#arrow_adam)"/>
+
+  <rect x="70" y="110" width="270" height="95" rx="12" fill="#ebf8ff" stroke="#63b3ed" stroke-width="2"/>
+  <text x="92" y="142" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#1a365d">SGD</text>
+  <text x="92" y="166" font-family="Arial, sans-serif" font-size="14" fill="#1a365d">更新直接跟随当前梯度</text>
+  <text x="92" y="186" font-family="Arial, sans-serif" font-size="14" fill="#1a365d">容易抖动，但实现简单</text>
+
+  <rect x="365" y="110" width="270" height="95" rx="12" fill="#f0fff4" stroke="#68d391" stroke-width="2"/>
+  <text x="387" y="142" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#22543d">Momentum</text>
+  <text x="387" y="166" font-family="Arial, sans-serif" font-size="14" fill="#22543d">叠加“速度项”抑制来回震荡</text>
+  <text x="387" y="186" font-family="Arial, sans-serif" font-size="14" fill="#22543d">在狭长谷地更稳</text>
+
+  <rect x="660" y="110" width="250" height="95" rx="12" fill="#fff5f5" stroke="#fc8181" stroke-width="2"/>
+  <text x="682" y="142" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#742a2a">Adam</text>
+  <text x="682" y="166" font-family="Arial, sans-serif" font-size="14" fill="#742a2a">自适应学习率 + 一阶/二阶矩估计</text>
+  <text x="682" y="186" font-family="Arial, sans-serif" font-size="14" fill="#742a2a">通常收敛更快</text>
+
+  <text x="90" y="510" font-family="Arial, sans-serif" font-size="15" fill="#4a5568">
+    说明：示意图强调优化路径差异，不代表所有任务都以同样方式收敛。
+  </text>
+</svg>

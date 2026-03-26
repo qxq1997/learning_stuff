@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="520" viewBox="0 0 980 520">
+  <rect width="980" height="520" fill="#f8fafc"/>
+  <text x="40" y="52" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#1a202c">
+    Learning Rate Schedules
+  </text>
+  <text x="40" y="82" font-family="Arial, sans-serif" font-size="16" fill="#4a5568">
+    Different LR policies change training stability and final convergence.
+  </text>
+
+  <line x1="100" y1="430" x2="900" y2="430" stroke="#2d3748" stroke-width="3"/>
+  <line x1="100" y1="430" x2="100" y2="130" stroke="#2d3748" stroke-width="3"/>
+  <text x="905" y="436" font-family="Arial, sans-serif" font-size="14" fill="#2d3748">epoch</text>
+  <text x="55" y="124" font-family="Arial, sans-serif" font-size="14" fill="#2d3748">lr</text>
+
+  <path d="M130,170 L880,170" fill="none" stroke="#2b6cb0" stroke-width="3"/>
+  <text x="705" y="158" font-family="Arial, sans-serif" font-size="14" fill="#2b6cb0">constant</text>
+
+  <path d="M130,220 L330,220 L330,260 L530,260 L530,300 L730,300 L730,340 L880,340"
+        fill="none" stroke="#2f855a" stroke-width="3"/>
+  <text x="705" y="328" font-family="Arial, sans-serif" font-size="14" fill="#2f855a">step decay</text>
+
+  <path d="M130,150 C300,180 500,250 680,320 C760,350 820,365 880,380"
+        fill="none" stroke="#c53030" stroke-width="3"/>
+  <text x="705" y="372" font-family="Arial, sans-serif" font-size="14" fill="#c53030">cosine decay</text>
+
+  <path d="M130,410 C170,330 220,260 270,220 C320,200 390,210 460,250 C530,290 600,330 680,350 C760,365 820,370 880,372"
+        fill="none" stroke="#805ad5" stroke-width="3"/>
+  <text x="655" y="402" font-family="Arial, sans-serif" font-size="14" fill="#805ad5">warmup + decay</text>
+
+  <rect x="110" y="100" width="340" height="90" rx="12" fill="#ebf8ff" stroke="#90cdf4" stroke-width="2"/>
+  <text x="130" y="130" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#1a365d">经验建议</text>
+  <text x="130" y="154" font-family="Arial, sans-serif" font-size="14" fill="#1a365d">1) 初期学习率可稍大，快速下降损失</text>
+  <text x="130" y="176" font-family="Arial, sans-serif" font-size="14" fill="#1a365d">2) 后期逐步减小，稳定收敛</text>
+
+  <text x="100" y="470" font-family="Arial, sans-serif" font-size="15" fill="#4a5568">
+    重点：学习率不是固定常数，调度策略常常直接决定“收敛速度 + 最终效果”。
+  </text>
+</svg>

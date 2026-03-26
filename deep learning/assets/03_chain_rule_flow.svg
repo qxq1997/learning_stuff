@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="560" viewBox="0 0 980 560">
+  <defs>
+    <marker id="arrow_fwd" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#4a5568"/>
+    </marker>
+    <marker id="arrow_bwd" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#c53030"/>
+    </marker>
+  </defs>
+
+  <rect width="980" height="560" fill="#f7fafc"/>
+  <text x="40" y="52" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#1a202c">
+    Chain Rule in Backpropagation
+  </text>
+  <text x="40" y="82" font-family="Arial, sans-serif" font-size="16" fill="#4a5568">
+    dL/dW1 需要通过后续每一层的局部导数连乘得到。
+  </text>
+
+  <rect x="70" y="190" width="140" height="60" rx="10" fill="#bee3f8" stroke="#3182ce" stroke-width="2"/>
+  <text x="116" y="226" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#1a365d">x</text>
+
+  <rect x="270" y="190" width="180" height="60" rx="10" fill="#c6f6d5" stroke="#38a169" stroke-width="2"/>
+  <text x="308" y="218" font-family="Arial, sans-serif" font-size="14" fill="#22543d">z1 = W1x + b1</text>
+  <text x="308" y="236" font-family="Arial, sans-serif" font-size="14" fill="#22543d">a1 = ReLU(z1)</text>
+
+  <rect x="520" y="190" width="180" height="60" rx="10" fill="#fbd38d" stroke="#dd6b20" stroke-width="2"/>
+  <text x="558" y="218" font-family="Arial, sans-serif" font-size="14" fill="#7b341e">z2 = W2a1 + b2</text>
+  <text x="558" y="236" font-family="Arial, sans-serif" font-size="14" fill="#7b341e">y_hat = sigmoid(z2)</text>
+
+  <rect x="770" y="190" width="140" height="60" rx="10" fill="#fed7e2" stroke="#d53f8c" stroke-width="2"/>
+  <text x="819" y="226" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#702459">L</text>
+
+  <line x1="210" y1="220" x2="270" y2="220" stroke="#4a5568" stroke-width="3" marker-end="url(#arrow_fwd)"/>
+  <line x1="450" y1="220" x2="520" y2="220" stroke="#4a5568" stroke-width="3" marker-end="url(#arrow_fwd)"/>
+  <line x1="700" y1="220" x2="770" y2="220" stroke="#4a5568" stroke-width="3" marker-end="url(#arrow_fwd)"/>
+
+  <text x="298" y="170" font-family="Arial, sans-serif" font-size="14" fill="#4a5568">Forward</text>
+
+  <line x1="770" y1="330" x2="700" y2="330" stroke="#c53030" stroke-width="3" marker-end="url(#arrow_bwd)"/>
+  <line x1="520" y1="330" x2="450" y2="330" stroke="#c53030" stroke-width="3" marker-end="url(#arrow_bwd)"/>
+  <line x1="270" y1="330" x2="210" y2="330" stroke="#c53030" stroke-width="3" marker-end="url(#arrow_bwd)"/>
+
+  <rect x="700" y="295" width="210" height="70" rx="10" fill="#fff5f5" stroke="#c53030" stroke-width="2"/>
+  <text x="718" y="323" font-family="Arial, sans-serif" font-size="13" fill="#742a2a">
+    dL/dW2, dL/db2
+  </text>
+  <text x="718" y="343" font-family="Arial, sans-serif" font-size="13" fill="#742a2a">
+    先更新靠近输出层参数
+  </text>
+
+  <rect x="450" y="295" width="230" height="70" rx="10" fill="#fff5f5" stroke="#c53030" stroke-width="2"/>
+  <text x="468" y="323" font-family="Arial, sans-serif" font-size="13" fill="#742a2a">
+    dL/da1 = dL/dz2 * dz2/da1
+  </text>
+  <text x="468" y="343" font-family="Arial, sans-serif" font-size="13" fill="#742a2a">
+    误差信号继续向前传
+  </text>
+
+  <rect x="210" y="295" width="220" height="70" rx="10" fill="#fff5f5" stroke="#c53030" stroke-width="2"/>
+  <text x="228" y="323" font-family="Arial, sans-serif" font-size="13" fill="#742a2a">
+    dL/dW1 = dL/da1 * da1/dz1 * dz1/dW1
+  </text>
+  <text x="228" y="343" font-family="Arial, sans-serif" font-size="13" fill="#742a2a">
+    链式法则连乘
+  </text>
+
+  <text x="292" y="286" font-family="Arial, sans-serif" font-size="14" fill="#c53030">Backward</text>
+
+  <rect x="80" y="420" width="820" height="95" rx="12" fill="#edf2f7" stroke="#a0aec0" stroke-width="2"/>
+  <text x="108" y="454" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#2d3748">
+    一句话理解
+  </text>
+  <text x="108" y="480" font-family="Arial, sans-serif" font-size="15" fill="#2d3748">
+    反向传播不是“猜参数”，而是用链式法则精确计算每个参数对最终损失的贡献。
+  </text>
+  <text x="108" y="500" font-family="Arial, sans-serif" font-size="15" fill="#2d3748">
+    这让优化器可以做有方向的更新，而不是盲目试错。
+  </text>
+</svg>

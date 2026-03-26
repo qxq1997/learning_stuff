@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="460" viewBox="0 0 1200 460">
+  <rect width="1200" height="460" fill="#f8fafc"/>
+  <text x="40" y="48" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#1a202c">结算系统的可观测性</text>
+  <text x="40" y="78" font-family="Arial, sans-serif" font-size="16" fill="#4a5568">不仅要知道服务活着，还要知道账做得对不对。</text>
+
+  <rect x="90" y="130" rx="18" ry="18" width="280" height="210" fill="#bee3f8" stroke="#3182ce" stroke-width="2"/>
+  <text x="175" y="170" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#1a365d">Metrics</text>
+  <text x="130" y="208" font-family="Arial, sans-serif" font-size="15" fill="#1a365d">QPS / 错误率 / Kafka lag</text>
+  <text x="130" y="236" font-family="Arial, sans-serif" font-size="15" fill="#1a365d">打款成功率 / 差错笔数</text>
+  <text x="130" y="264" font-family="Arial, sans-serif" font-size="15" fill="#1a365d">规则命中率 / pending 数量</text>
+
+  <rect x="460" y="130" rx="18" ry="18" width="280" height="210" fill="#c6f6d5" stroke="#38a169" stroke-width="2"/>
+  <text x="563" y="170" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#22543d">Logs</text>
+  <text x="500" y="208" font-family="Arial, sans-serif" font-size="15" fill="#22543d">orderId / traceId / merchantId</text>
+  <text x="500" y="236" font-family="Arial, sans-serif" font-size="15" fill="#22543d">规则命中 / 分录写入 / 打款回执</text>
+  <text x="500" y="264" font-family="Arial, sans-serif" font-size="15" fill="#22543d">便于单笔订单排障</text>
+
+  <rect x="830" y="130" rx="18" ry="18" width="280" height="210" fill="#fed7d7" stroke="#e53e3e" stroke-width="2"/>
+  <text x="928" y="170" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#742a2a">Traces</text>
+  <text x="865" y="208" font-family="Arial, sans-serif" font-size="15" fill="#742a2a">跨服务链路耗时</text>
+  <text x="865" y="236" font-family="Arial, sans-serif" font-size="15" fill="#742a2a">定位慢在哪里、挂在哪里</text>
+  <text x="865" y="264" font-family="Arial, sans-serif" font-size="15" fill="#742a2a">适合排查复杂链路问题</text>
+
+  <rect x="220" y="360" rx="12" ry="12" width="760" height="54" fill="#edf2f7" stroke="#a0aec0" stroke-width="2"/>
+  <text x="245" y="394" font-family="Arial, sans-serif" font-size="16" fill="#2d3748">结算系统最关键的是业务监控：事件数、分录数、结算单数、打款成功率、对账差异、规则命中异常。</text>
+</svg>

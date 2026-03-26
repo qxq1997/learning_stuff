@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="500" viewBox="0 0 980 500">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#4a5568"/>
+    </marker>
+  </defs>
+
+  <rect width="980" height="500" fill="#f7fafc"/>
+  <text x="40" y="52" font-family="Arial, sans-serif" font-size="32" font-weight="700" fill="#1a202c">
+    Forward Pass in a Tiny Neural Network
+  </text>
+  <text x="40" y="82" font-family="Arial, sans-serif" font-size="16" fill="#4a5568">
+    Input -> Linear + ReLU -> Linear + Sigmoid -> Probability
+  </text>
+
+  <text x="95" y="130" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#2d3748">Input Layer</text>
+  <text x="420" y="130" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#2d3748">Hidden Layer</text>
+  <text x="770" y="130" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#2d3748">Output</text>
+
+  <circle cx="140" cy="190" r="25" fill="#bee3f8" stroke="#4299e1" stroke-width="2"/>
+  <circle cx="140" cy="270" r="25" fill="#bee3f8" stroke="#4299e1" stroke-width="2"/>
+  <text x="130" y="196" font-family="Arial, sans-serif" font-size="13" fill="#1a365d">x1</text>
+  <text x="130" y="276" font-family="Arial, sans-serif" font-size="13" fill="#1a365d">x2</text>
+
+  <circle cx="470" cy="180" r="30" fill="#c6f6d5" stroke="#48bb78" stroke-width="2"/>
+  <circle cx="470" cy="280" r="30" fill="#c6f6d5" stroke="#48bb78" stroke-width="2"/>
+  <text x="455" y="186" font-family="Arial, sans-serif" font-size="13" fill="#22543d">h1</text>
+  <text x="455" y="286" font-family="Arial, sans-serif" font-size="13" fill="#22543d">h2</text>
+
+  <circle cx="810" cy="230" r="35" fill="#fed7d7" stroke="#f56565" stroke-width="2"/>
+  <text x="796" y="236" font-family="Arial, sans-serif" font-size="13" fill="#742a2a">y_hat</text>
+
+  <line x1="165" y1="190" x2="438" y2="180" stroke="#4a5568" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="165" y1="190" x2="438" y2="280" stroke="#4a5568" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="165" y1="270" x2="438" y2="180" stroke="#4a5568" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="165" y1="270" x2="438" y2="280" stroke="#4a5568" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <line x1="500" y1="180" x2="775" y2="230" stroke="#4a5568" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="500" y1="280" x2="775" y2="230" stroke="#4a5568" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="286" y="360" width="410" height="96" rx="14" fill="#edf2f7" stroke="#a0aec0" stroke-width="2"/>
+  <text x="314" y="392" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#2d3748">
+    Layer equations
+  </text>
+  <text x="314" y="418" font-family="Arial, sans-serif" font-size="15" fill="#2d3748">
+    z1 = xW1 + b1,   a1 = ReLU(z1)
+  </text>
+  <text x="314" y="442" font-family="Arial, sans-serif" font-size="15" fill="#2d3748">
+    z2 = a1W2 + b2,  y_hat = Sigmoid(z2)
+  </text>
+</svg>
