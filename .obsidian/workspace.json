@@ -194,8 +194,9 @@
       "obsidian-git:Open Git source control": false
     }
   },
-  "active": "d10898f23ec50c54",
+  "active": "23a3715afbdc2e8b",
   "lastOpenFiles": [
+    "MCP/04b_Tools补充QA.md",
     "readme.md",
     "MCP/04_Tools工具调用.md",
     "MCP/03_MCP传输层.md",
@@ -222,7 +223,6 @@
     "RPC/04_序列化与协议设计：JSON、Protobuf、Hessian、Kryo与兼容性.md",
     "RPC/03_动态代理、异步调用与Future：远程调用为什么能像本地方法.md",
     "RPC/02_一次RPC调用到底发生了什么：代理、协议、传输与调度.md",
-    "RPC/01_RPC是什么、为什么需要它、和HTTP是什么关系.md",
     "Service Mesh",
     "RPC",
     "Nginx",
