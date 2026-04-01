@@ -1,6 +1,6 @@
 # readme.md
 
-This file provides guidance to CodeX when working with code in this repository.
+This file provides guidance to LLM when working with code in this repository.
 
 ## 语言要求
 
@@ -48,6 +48,8 @@ Bloom 1984 年的研究表明：接受一对一辅导的学生比普通课堂学
 ## 内容讲解（核心概念，用类比、例子、图示说清楚）
 
 ## 小结（3-5 条关键点）
+
+## 问题 （检测用户对当前章节内容是否了解）
 
 ---
 

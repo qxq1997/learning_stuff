@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "MCP/01b_核心概念补充.md",
+                "file": "MCP/04_Tools工具调用.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "01b_核心概念补充"
+              "title": "04_Tools工具调用"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "MCP/01b_核心概念补充.md",
+                "file": "MCP/04_Tools工具调用.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "01b_核心概念补充 的反向链接列表"
+              "title": "04_Tools工具调用 的反向链接列表"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "MCP/01b_核心概念补充.md",
+                "file": "MCP/04_Tools工具调用.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "01b_核心概念补充 的出链列表"
+              "title": "04_Tools工具调用 的出链列表"
             }
           },
           {
@@ -156,21 +156,31 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "MCP/01b_核心概念补充.md",
+                "file": "MCP/04_Tools工具调用.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "01b_核心概念补充 的大纲"
+              "title": "04_Tools工具调用 的大纲"
+            }
+          },
+          {
+            "id": "23a3715afbdc2e8b",
+            "type": "leaf",
+            "state": {
+              "type": "git-view",
+              "state": {},
+              "icon": "git-pull-request",
+              "title": "Source Control"
             }
           }
-        ]
+        ],
+        "currentTab": 5
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -180,13 +190,20 @@
       "daily-notes:打开/创建今天的日记": false,
       "templates:插入模板": false,
       "command-palette:打开命令面板": false,
-      "bases:新建数据库": false
+      "bases:新建数据库": false,
+      "obsidian-git:Open Git source control": false
     }
   },
   "active": "d10898f23ec50c54",
   "lastOpenFiles": [
-    "MCP/进度.md",
+    "readme.md",
+    "MCP/04_Tools工具调用.md",
+    "MCP/03_MCP传输层.md",
+    "DDIA/04_编码、模式演化与数据流.md",
+    "DDIA/进度.md",
+    "MCP/02_MCP架构全景.md",
     "MCP/01b_核心概念补充.md",
+    "MCP/进度.md",
     "MCP/01_MCP是什么.md",
     "Service Mesh/01_为什么需要Service Mesh：从SDK治理到Sidecar.md",
     "MCP",
@@ -206,12 +223,6 @@
     "RPC/03_动态代理、异步调用与Future：远程调用为什么能像本地方法.md",
     "RPC/02_一次RPC调用到底发生了什么：代理、协议、传输与调度.md",
     "RPC/01_RPC是什么、为什么需要它、和HTTP是什么关系.md",
-    "RPC/00_学习路径.md",
-    "Nginx/06_HTTPS、安全与线上排障.md",
-    "Nginx/05_性能优化：sendfile、keepalive、gzip、缓存与调优.md",
-    "Nginx/04_反向代理、负载均衡与proxy_pass的关键细节.md",
-    "Nginx/03_配置体系：server、location、rewrite与变量.md",
-    "Nginx/02_为什么Nginx这么快：master-worker、事件驱动、epoll与高并发.md",
     "Service Mesh",
     "RPC",
     "Nginx",
