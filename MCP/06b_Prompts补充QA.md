@@ -82,3 +82,79 @@ messages: [
 ### 结论
 
 简单 Prompt 用单条 user 消息完全够了。多轮主要用在需要**精确控制 LLM 输出结构**的复杂场景——通过 assistant 消息"锚定"输出框架，通过 message 分离实现指令与数据的分层。
+
+---
+
+## Q2：Prompt 可以同时用到 Resource 和 Tool 吗？是三者的叠加吗？
+
+### 答：Prompt 可以主动嵌入 Resource，但不能直接调用 Tool——不过间接会触发 Tool
+
+**三者的叠加发生在不同阶段：**
+
+```
+用户选择 /analyze-sql，填入 SQL
+         │
+         ▼
+    ┌─────────┐
+    │ Prompt  │  Server 端展开：
+    │ 展开    │  1. 生成分析指令（text）
+    │         │  2. 读取表结构（Resource）并嵌入     ← Prompt + Resource
+    └────┬────┘
+         │ 返回 messages 数组
+         ▼
+    ┌─────────┐
+    │  Host   │  把 messages + Tool列表 一起发给 LLM
+    └────┬────┘
+         │
+         ▼
+    ┌─────────┐
+    │  LLM    │  看到：
+    │  推理   │  - Prompt 展开的消息（含SQL + 表结构）
+    │         │  - 可用的 Tool 列表
+    │         │
+    │         │  LLM 判断："我需要调 explain_query"   ← 间接触发 Tool
+    └────┬────┘
+         │ tool_use: explain_query
+         ▼
+    ┌─────────┐
+    │  Tool   │  执行 EXPLAIN ANALYZE
+    │  调用   │  返回执行计划
+    └────┬────┘
+         │ 结果回传
+         ▼
+    ┌─────────┐
+    │  LLM    │  结合 Prompt 框架 + Resource 表结构
+    │  生成   │  + Tool 执行计划 → 完整分析报告
+    └─────────┘
+```
+
+### 叠加关系总结
+
+| 阶段 | 谁在工作 | 做什么 |
+| --- | --- | --- |
+| 用户触发 Prompt | **Prompt** | 展开成 messages，**主动拉取 Resource** 嵌入 |
+| 发给 LLM | **Host** | 把 Prompt 的 messages + Tool 列表一起发 |
+| LLM 推理 | **LLM** | 基于 Prompt 上下文，**自主决定调用 Tool** |
+| Tool 执行 | **Tool** | 返回结果，LLM 继续推理 |
+
+```
+三者的叠加关系：
+
+Prompt ──────┐
+             │  Prompt 主动嵌入 Resource（Server 端，展开阶段）
+Resource ────┤
+             │  LLM 基于上下文自主决定调 Tool（LLM 端，推理阶段）
+Tool ────────┘
+
+时间线：
+  Prompt展开(嵌入Resource) → 发给LLM → LLM决定调Tool → Tool执行 → LLM生成最终回答
+  ─────────────────────────────────────────────────────────────────────────────────→
+  Server 端                   Host 端    LLM 端         Server 端    LLM 端
+```
+
+### 关键区分
+
+- **Prompt + Resource**：在 Server 端展开时就完成了（Prompt 主动读取 Resource）
+- **Prompt + Tool**：在 LLM 推理时才发生（LLM 看到 Prompt 上下文后自主决定调 Tool）
+
+所以"三者叠加"本质上是对的，只是叠加的时机和主导者不同。
