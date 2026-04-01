@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "MCP/06b_Prompts补充QA.md",
+                "file": "DDD/02_领域、子域与核心域：业务地图怎么画.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "06b_Prompts补充QA"
+              "title": "02_领域、子域与核心域：业务地图怎么画"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "MCP/06b_Prompts补充QA.md",
+                "file": "DDD/02_领域、子域与核心域：业务地图怎么画.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "06b_Prompts补充QA 的反向链接列表"
+              "title": "02_领域、子域与核心域：业务地图怎么画 的反向链接列表"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "MCP/06b_Prompts补充QA.md",
+                "file": "DDD/02_领域、子域与核心域：业务地图怎么画.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "06b_Prompts补充QA 的出链列表"
+              "title": "02_领域、子域与核心域：业务地图怎么画 的出链列表"
             }
           },
           {
@@ -156,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "MCP/06b_Prompts补充QA.md",
+                "file": "DDD/02_领域、子域与核心域：业务地图怎么画.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "06b_Prompts补充QA 的大纲"
+              "title": "02_领域、子域与核心域：业务地图怎么画 的大纲"
             }
           },
           {
@@ -196,33 +196,35 @@
   },
   "active": "d10898f23ec50c54",
   "lastOpenFiles": [
-    "MCP/06_Prompts提示模板.md",
-    "MCP/06b_Prompts补充QA.md",
-    "MCP/05b_Resources补充QA.md",
-    "MCP/05_Resources资源暴露.md",
-    "MCP/04b_Tools补充QA.md",
-    "MCP/04_Tools工具调用.md",
-    "readme.md",
-    "MCP/03_MCP传输层.md",
-    "DDIA/04_编码、模式演化与数据流.md",
-    "DDIA/进度.md",
-    "MCP/02_MCP架构全景.md",
-    "MCP/01b_核心概念补充.md",
-    "MCP/进度.md",
-    "MCP/01_MCP是什么.md",
-    "Service Mesh/01_为什么需要Service Mesh：从SDK治理到Sidecar.md",
-    "MCP",
-    "RPC/08_高级话题：链路追踪、优雅上下线、服务路由与设计RPC框架.md",
-    "RPC/进度.md",
-    "Nginx/进度.md",
-    "Nginx/07_高可用、热部署、平滑升级与面试答题框架.md",
-    "Service Mesh/00_学习路径.md",
+    "DDIA/04c_proto文件与代码生成.md",
+    "DDIA/04b_Avro与Protobuf怎么选.md",
+    "DDD/02_领域、子域与核心域：业务地图怎么画.md",
     "DDD/01_什么是DDD与为什么需要它.md",
-    "DDD/00_学习路径.md",
-    "Service Mesh/进度.md",
-    "Service Mesh/02_核心架构：数据面、控制面、Sidecar与Istio.md",
-    "RPC/07_gRPC、Dubbo、Thrift的设计差异与选型.md",
-    "RPC/06_负载均衡、重试、熔断、降级与幂等.md",
+    "Talent Hub/02-DDD领域模型设计.md",
+    "Talent Hub/01-系统设计总览.md",
+    "Talent Hub/00-项目原则与约束.md",
+    "DDIA/04_编码、模式演化与数据流.md",
+    "Talent Hub/66-学习闭环与专项练习设计.md",
+    "Talent Hub/67-异步任务与后台Worker设计.md",
+    "Talent Hub/65-Voyage-Reranker接入设计.md",
+    "Talent Hub/64-数据库约束-取舍与潜在升级点.md",
+    "Talent Hub/63-考试-判卷-学习-分析表关系详解.md",
+    "Talent Hub/62-身份-知识库-题库表关系详解.md",
+    "Talent Hub/61-数据库ER总览与主干关系.md",
+    "Talent Hub/60-BGE-Sparse-Multi-Vector-Hybrid接入设计.md",
+    "Talent Hub/59-BGE-Hybrid-Reranker-评测基线设计.md",
+    "Talent Hub/58-OpenAI-Embedding默认化与可切换Provider设计.md",
+    "Talent Hub/57-Qdrant-Dense-Retrieval接入设计.md",
+    "Talent Hub/56-BGE-M3-Dense-Embedding接入设计.md",
+    "Talent Hub/55-RAG检索与模型选型设计.md",
+    "Talent Hub/54-跨知识库检索出题设计.md",
+    "Talent Hub/53-跨知识库检索与出处引用设计.md",
+    "Talent Hub/52-知识库检索预演设计.md",
+    "Talent Hub/51-知识库RAG闭环设计.md",
+    "Talent Hub/50-题目与考试删除设计.md",
+    "Talent Hub",
+    "docs",
+    "MCP",
     "Service Mesh",
     "RPC",
     "Nginx",
