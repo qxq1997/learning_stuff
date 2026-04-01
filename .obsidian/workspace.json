@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "DDIA/05_复制：为什么数据要有副本.md",
+                "file": "DDIA/06_分区：系统如何横向扩展.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "05_复制：为什么数据要有副本"
+              "title": "06_分区：系统如何横向扩展"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "DDIA/05_复制：为什么数据要有副本.md",
+                "file": "DDIA/06_分区：系统如何横向扩展.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "05_复制：为什么数据要有副本 的反向链接列表"
+              "title": "06_分区：系统如何横向扩展 的反向链接列表"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "DDIA/05_复制：为什么数据要有副本.md",
+                "file": "DDIA/06_分区：系统如何横向扩展.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "05_复制：为什么数据要有副本 的出链列表"
+              "title": "06_分区：系统如何横向扩展 的出链列表"
             }
           },
           {
@@ -156,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "DDIA/05_复制：为什么数据要有副本.md",
+                "file": "DDIA/06_分区：系统如何横向扩展.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "05_复制：为什么数据要有副本 的大纲"
+              "title": "06_分区：系统如何横向扩展 的大纲"
             }
           },
           {
@@ -196,8 +196,11 @@
   },
   "active": "d10898f23ec50c54",
   "lastOpenFiles": [
-    "DDD/03_通用语言与限界上下文：先定边界，再谈模型.md",
+    "DDD/04_实体、值对象与聚合：业务规则放在哪里.md",
+    "DDD/03b_通用语言与限界上下文补充：语言必须落到代码里.md",
+    "DDIA/06_分区：系统如何横向扩展.md",
     "DDIA/05_复制：为什么数据要有副本.md",
+    "DDD/03_通用语言与限界上下文：先定边界，再谈模型.md",
     "DDIA/04c_proto文件与代码生成.md",
     "DDD/02d_一分钟闯关：进入第3课前的最后校准.md",
     "MCP/11_MCP生态.md",
@@ -219,9 +222,6 @@
     "Talent Hub/62-身份-知识库-题库表关系详解.md",
     "Talent Hub/61-数据库ER总览与主干关系.md",
     "Talent Hub/60-BGE-Sparse-Multi-Vector-Hybrid接入设计.md",
-    "Talent Hub/59-BGE-Hybrid-Reranker-评测基线设计.md",
-    "Talent Hub/58-OpenAI-Embedding默认化与可切换Provider设计.md",
-    "Talent Hub/57-Qdrant-Dense-Retrieval接入设计.md",
     "Talent Hub",
     "docs",
     "MCP",
