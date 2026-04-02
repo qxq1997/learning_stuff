@@ -1,0 +1,68 @@
+site_name: 网络架构实战课
+
+theme:
+  name: material
+
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-4
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-7
+        name: Switch to light mode
+
+  features:
+    - navigation.footer
+    - content.action.edit
+    - navigation.sections
+    - content.code.copy
+
+  icon:
+    edit: material/pencil
+    logo: material/console-line
+
+extra:
+  homepage:
+  version:
+    provider: mike
+
+copyright: Copyright © 2024-Present zkep
+repo_url: https://github.com/zkep/mygeektime
+
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+nav:
+   - 网络架构实战课.md
+  
+   - 开篇词-如何练好网络架构这门“内功心法”？.md
+  
+   - 导学-实验说明&学习指南.md
+  
+   - 01-一个数据包的网络之旅：网络是如何工作的？.md
+  
+   - 02-架构设计思考：网络架构设计要考虑哪些要素？.md
+  
+   - 实战前的叮嘱-写给网络领域新同学的话.md
+  
+   - 03-主备： 怎样防范单点故障？.md
+  
+   - 04-集群（上）：怎样实现横向扩展？.md
+  
+   - 05-集群（下）：怎样实现横向扩展？.md
+  
+   - 06-限流：怎样防止应用被打垮？.md
+  
