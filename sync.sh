@@ -4,7 +4,13 @@ set -euo pipefail
 LOCAL="/Users/xinqi/Documents/learning_stuff"
 ICLOUD="/Users/xinqi/Library/Mobile Documents/iCloud~md~obsidian/Documents/learning_stuff"
 MODE="${1:-push}"
-RSYNC_ARGS=(-rlvh --delete --exclude '.DS_Store')
+RSYNC_ARGS=(
+  -rlvh
+  --delete
+  --exclude '.DS_Store'
+  --exclude '.claude/'
+  --exclude '.obsidian/'
+)
 
 if [[ ! -d "$LOCAL" ]]; then
   echo "本地目录不存在: $LOCAL" >&2
