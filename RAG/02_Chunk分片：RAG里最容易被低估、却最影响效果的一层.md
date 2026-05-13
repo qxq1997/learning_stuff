@@ -439,17 +439,480 @@ overlap 最常见的误区就是：
 
 它们的理想切分边界根本不是一回事。
 
-#### 9.2 一个非常实用的工程套路
+#### 9.2 一个非常实用的工程套路：先判型，再切分
 
 先做轻量采样分析，再决定走哪条处理链：
 
-- 如果前 5000 字里出现大量 code fence，倾向代码文档
-- 如果标题层级明显，倾向 Markdown/结构文档
-- 如果 OCR 噪声严重，先清洗再切分
-- 如果表格很多，走专门表格处理链
+- 如果前 5000 字里出现大量 code fence，倾向代码文档。
+- 如果标题层级明显，倾向 Markdown / 结构文档。
+- 如果 OCR 噪声严重，先清洗再切分。
+- 如果表格很多，走专门表格处理链。
 
-这看起来“没那么学术”，但非常符合工程现实：  
+这看起来“没那么学术”，但非常符合工程现实：
+
 **不要试图用一个切分器吃掉所有文档。**
+
+更准确地说，生产里的 chunking 不应该是：
+
+```text
+document -> splitter -> chunks
+```
+
+而应该是：
+
+```text
+document -> light profiling -> document-type routing -> specialized parsing/chunking -> chunks + metadata
+```
+
+这里的 `light profiling` 不需要很重。  
+它不是要理解文档全部内容，而是快速判断：
+
+`这份文档最怕被哪种方式切坏？`
+
+不同文档怕的东西不一样：
+
+- 代码文档怕切断 code block、函数签名、配置示例。
+- Markdown / Wiki 怕标题路径丢失。
+- OCR 文档怕噪声先被 embedding 学进去。
+- 表格文档怕表头、单位、行列关系丢失。
+- FAQ 文档怕问答对被拆开。
+- 合同 / 政策文档怕条款编号、例外条件、有效期被拆散。
+
+所以这一步不是“锦上添花”，而是在避免一开始就把知识形状打碎。
+
+#### 9.3 轻量采样到底采什么
+
+可以先只读：
+
+- 前 `5000` 到 `10000` 字符
+- 文档中间随机几段
+- 最后一两页或最后一两节
+- parser 输出的 element 类型统计
+- 页码、标题、表格、代码块、图片说明等结构信息
+
+不要只看开头。  
+很多文档开头是目录、声明、封面，真正结构在后面。  
+更稳的做法是：
+
+```text
+head sample + middle sample + tail sample + parser element statistics
+```
+
+采样时可以计算这些信号：
+
+| 信号 | 说明 | 可能指向 |
+| --- | --- | --- |
+| `code_fence_count` | ``` 或 `~~~` 出现频率 | 代码 / 技术文档 |
+| `heading_density` | `#`、`1.2.3`、`第 x 章` 等标题密度 | 结构化文档 |
+| `table_line_ratio` | Markdown 表格、CSV 风格、制表符、对齐符比例 | 表格文档 |
+| `ocr_noise_score` | 乱码、断行、异常空格、重复页眉页脚 | OCR / 扫描件 |
+| `avg_line_length` | 行长是否异常短或异常碎 | OCR、代码、列表 |
+| `list_density` | `-`、`1.`、`（一）` 等列表项比例 | SOP、政策、FAQ |
+| `punctuation_ratio` | 标点和特殊符号占比 | 代码、表格、噪声 |
+| `element_type_histogram` | parser 输出 title/table/paragraph/code 数量 | 专门处理链 |
+
+一个重要判断是：
+
+`文档类型不是单选题，而是多标签。`
+
+比如一份技术文档可能同时是：
+
+```text
+Markdown + code-heavy + table-heavy
+```
+
+这时不要给整篇文档选一个 splitter，而应该对不同 element 走不同处理链。
+
+#### 9.4 代码文档怎么处理
+
+代码文档的典型信号：
+
+- code fence 很多：```python、```json、```yaml
+- 行首缩进多
+- `{}`、`()`, `=>`, `::`, `import`, `class`, `def` 密集
+- Markdown 里穿插大量配置、命令、API 示例
+- 文件路径、函数名、错误码很多
+
+代码文档最怕两件事：
+
+1. 把代码块切断。
+2. 把解释文字和对应代码分开。
+
+比如：
+
+````markdown
+下面配置用于开启重试：
+
+```yaml
+retry:
+  max_attempts: 3
+  backoff: exponential
+```
+
+`max_attempts` 表示最大重试次数。
+````
+
+如果 splitter 把 yaml 和后面的解释分开，用户问 `max_attempts 是什么` 时，很容易只召回代码或只召回解释。
+
+代码文档处理链建议：
+
+```text
+Markdown parser
+-> 识别 heading / paragraph / code fence
+-> code block 作为不可切断 element
+-> 将“代码前说明 + code block + 代码后解释”合并成一个 parent
+-> child 可以按函数、配置项、段落继续切
+-> metadata 记录 language、symbol、file_path、heading_path
+```
+
+关键 metadata：
+
+```json
+{
+  "element_type": "code",
+  "code_language": "yaml",
+  "section_path": ["配置", "重试策略"],
+  "symbol_names": ["retry.max_attempts", "retry.backoff"],
+  "file_path": "docs/retry.md"
+}
+```
+
+如果是代码仓库，不要只靠 Markdown splitter。  
+更稳的是 AST / tree-sitter-aware chunking：
+
+- 函数作为基本单元
+- 类作为 parent
+- 文件路径和模块路径进入 metadata
+- import / dependency 作为结构信息
+- 注释和函数体尽量不要拆开
+
+代码类 RAG 的经验是：
+
+`按自然语言切文档，按 AST 切代码。`
+
+#### 9.5 Markdown / Wiki / 结构化文档怎么处理
+
+结构化文档的典型信号：
+
+- 标题层级明显：`#`、`##`、`###`
+- 条款编号明显：`1.`、`1.1`、`1.1.1`
+- 中文制度标题：`第一章`、`第十二条`
+- 列表和段落边界清楚
+- parser 能输出 title / paragraph / list item
+
+这类文档最重要的是保留 `section_path`。
+
+例如：
+
+```text
+入职与离职
+  离职流程
+    权限回收
+      门禁权限应在 24 小时内停用
+```
+
+如果只存正文：
+
+```text
+门禁权限应在 24 小时内停用
+```
+
+embedding 还能召回，但生成时容易丢掉约束。  
+更好的 chunk text 是：
+
+```text
+标题路径：入职与离职 > 离职流程 > 权限回收
+正文：门禁权限应在 24 小时内停用。
+```
+
+结构化文档处理链建议：
+
+```text
+解析标题树
+-> 按 section 生成 parent chunk
+-> section 内按段落 / 列表项生成 child chunk
+-> child text 注入 heading path
+-> metadata 保存 section_id / section_path / heading_level
+-> 检索 child，回填 parent 或 section window
+```
+
+关键点：
+
+- 标题不要单独成为孤立 chunk，除非标题本身有业务含义。
+- 列表项短时，可以把相邻列表项和列表标题合并。
+- 条款型文档要保留条款编号。
+- parent-child 很适合结构化文档。
+
+#### 9.6 OCR 噪声文档怎么处理
+
+OCR 噪声文档的典型信号：
+
+- 大量异常空格：`权 限 回 收`
+- 断行严重：一句话被切成很多短行
+- 页眉页脚重复出现
+- 乱码或替代字符：`�`
+- 标点缺失或错位
+- 表格被 OCR 成乱序文本
+- 置信度低，如果 OCR 引擎提供 confidence
+
+OCR 文档最忌讳：
+
+`把脏文本直接 embedding。`
+
+因为 embedding 会把噪声也编码进去，后面很难救。  
+OCR 文档应该先做清洗和结构恢复，再切分。
+
+处理链建议：
+
+```text
+OCR / layout parser
+-> 去页眉页脚
+-> 修复断行和连字符
+-> 归一化空格和全角半角
+-> 基于 layout 恢复阅读顺序
+-> 标记低置信区域
+-> 噪声仍高时走 VLM / 人工复核 / 降权索引
+-> 再做 section-aware 或 paragraph-aware chunking
+```
+
+清洗要克制。  
+不要为了“看起来干净”把证据改坏。
+
+建议同时保留：
+
+- `raw_text`
+- `clean_text`
+- `ocr_confidence`
+- `page_number`
+- `bbox`
+- `parser_version`
+
+metadata 示例：
+
+```json
+{
+  "element_type": "paragraph",
+  "source_type": "scanned_pdf",
+  "ocr_required": true,
+  "ocr_confidence": 0.71,
+  "cleaning_pipeline": "ocr_clean_v2",
+  "page_number": 8,
+  "bbox": [71.2, 210.0, 510.5, 244.6]
+}
+```
+
+OCR 质量太低时，不要假装它和普通文本一样可靠。  
+可以在 rerank 或 context assembly 时降权，也可以在回答中提示“证据来自 OCR，可能需要核对原文”。
+
+#### 9.7 表格很多的文档怎么处理
+
+表格文档的典型信号：
+
+- Markdown 表格分隔符很多：`| --- |`
+- CSV / TSV 风格明显
+- parser 输出 table element 多
+- PDF 页面里存在大量网格线或对齐列
+- 数字、单位、百分比、日期密集
+- 行列标题非常关键
+
+表格最怕被当成普通文本切。
+
+原因是表格的信息不是线性的。  
+一个单元格的含义来自：
+
+```text
+表标题 + 表头 + 行标题 + 列标题 + 单位 + 脚注
+```
+
+例如单元格 `24` 本身毫无意义。  
+它可能是：
+
+```text
+离职员工 / 门禁权限 / 回收时限 / 小时 = 24
+```
+
+表格处理链建议：
+
+```text
+table extraction
+-> 识别 caption / header / units / footnotes
+-> 简单表格转 Markdown
+-> 复杂表格生成 table summary
+-> 按行或逻辑区域生成 row-level chunks
+-> 每个 row chunk 注入表头、单位、caption
+-> 原始表格另存为 structured artifact
+-> metadata 保存 table_id、row_id、column_ids、page、bbox
+```
+
+表格 chunk 示例：
+
+```text
+表格：权限回收 SLA
+列：对象=离职员工；权限类型=门禁；回收时限=24；单位=小时
+说明：离职员工的门禁权限应在 24 小时内完成回收。
+```
+
+metadata 示例：
+
+```json
+{
+  "element_type": "table_row",
+  "table_id": "tbl_access_sla",
+  "row_id": "row_3",
+  "column_ids": ["subject", "permission_type", "sla", "unit"],
+  "caption": "权限回收 SLA",
+  "page_number": 12
+}
+```
+
+表格多的系统通常需要两条检索路：
+
+- 文本化表格 chunk：适合语义问答。
+- 结构化表格对象：适合精确筛选、聚合、计算。
+
+比如用户问：
+
+```text
+哪类权限回收时限最长？
+```
+
+这可能需要对表格做排序或聚合，单纯 vector retrieval 不一定够。
+
+#### 9.8 FAQ、政策、合同、SOP 这类半结构文档怎么处理
+
+除了上面四类，企业知识库里还有几类高频文档。
+
+FAQ：
+
+```text
+按 Q/A 对切，问题和答案不能分离。
+同义问法可以作为 metadata 或扩展 query。
+```
+
+政策 / 合同：
+
+```text
+按条款、章节、定义、例外条件切。
+保留条款编号、有效期、适用范围、例外说明。
+不要把“规则”和“例外”切到两个互不相关的 chunk。
+```
+
+SOP / Runbook：
+
+```text
+按任务步骤切，但保留前置条件、风险提示、回滚步骤。
+步骤太短时，按阶段合并成 parent，step 做 child。
+```
+
+API 文档：
+
+```text
+endpoint / method / request schema / response schema / error code 要绑定在一起。
+不要把参数表、示例请求、错误码表分别孤立索引。
+```
+
+这类文档的共同特点是：
+
+`结构比字面相似度更可靠。`
+
+所以优先结构化，再考虑语义切分。
+
+#### 9.9 一个轻量文档路由器示例
+
+下面这个代码不是为了做一个完美分类器，而是展示工程套路：
+
+```python
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class DocumentProfile:
+    kind: str
+    confidence: float
+    signals: dict[str, float]
+
+
+def profile_document(text: str, *, sample_size: int = 8000) -> DocumentProfile:
+    sample = text[:sample_size]
+    lines = [line for line in sample.splitlines() if line.strip()]
+    line_count = max(len(lines), 1)
+
+    code_fence_count = sample.count("```") + sample.count("~~~")
+    markdown_heading_count = len(re.findall(r"(?m)^#{1,6}\s+\S+", sample))
+    numbered_heading_count = len(re.findall(r"(?m)^\s*(\d+\.){1,4}\s+\S+", sample))
+    cn_policy_heading_count = len(re.findall(r"(?m)^第[一二三四五六七八九十百]+[章节条]\s*", sample))
+    markdown_table_lines = len(re.findall(r"(?m)^\s*\|.+\|\s*$", sample))
+    replacement_chars = sample.count("�")
+    very_short_lines = sum(1 for line in lines if len(line.strip()) <= 6)
+    avg_line_len = sum(len(line) for line in lines) / line_count
+    whitespace_ratio = sum(ch.isspace() for ch in sample) / max(len(sample), 1)
+
+    signals = {
+        "code_fence_ratio": code_fence_count / line_count,
+        "heading_ratio": (markdown_heading_count + numbered_heading_count + cn_policy_heading_count) / line_count,
+        "table_line_ratio": markdown_table_lines / line_count,
+        "replacement_char_ratio": replacement_chars / max(len(sample), 1),
+        "short_line_ratio": very_short_lines / line_count,
+        "avg_line_len": avg_line_len,
+        "whitespace_ratio": whitespace_ratio,
+    }
+
+    if code_fence_count >= 3 or signals["code_fence_ratio"] > 0.02:
+        return DocumentProfile("code_or_technical_doc", 0.85, signals)
+
+    if signals["table_line_ratio"] > 0.15:
+        return DocumentProfile("table_heavy_doc", 0.82, signals)
+
+    if signals["replacement_char_ratio"] > 0.002 or (
+        signals["short_line_ratio"] > 0.45 and avg_line_len < 24
+    ):
+        return DocumentProfile("ocr_noisy_doc", 0.78, signals)
+
+    if signals["heading_ratio"] > 0.04:
+        return DocumentProfile("structured_markdown_or_policy", 0.8, signals)
+
+    return DocumentProfile("plain_text", 0.55, signals)
+```
+
+它背后的思想是：
+
+- 先用便宜信号判型。
+- 不追求一次判断绝对正确。
+- 低置信度时走保守策略。
+- 类型可以多标签，真实系统可以返回多个候选链路。
+- 每次路由结果写入 metadata，方便后续评测。
+
+比如 metadata 可以记录：
+
+```json
+{
+  "profile_kind": "table_heavy_doc",
+  "profile_confidence": 0.82,
+  "chunking_pipeline": "table_aware_v2"
+}
+```
+
+这样以后你发现“表格类问题效果差”，才能按 `chunking_pipeline` 做评测切片。
+
+#### 9.10 一个实际的路由决策表
+
+| 判型 | 推荐 parser | 推荐 parent | 推荐 child | 关键 metadata |
+| --- | --- | --- | --- | --- |
+| 代码 / 技术文档 | Markdown parser + code fence / AST | 标题小节 + code block 附近解释 | 函数、配置项、段落 | `code_language`、`symbol`、`file_path` |
+| Markdown / Wiki | Markdown / HTML parser | section | 段落、列表项 | `section_path`、`heading_level` |
+| OCR 扫描件 | OCR + layout parser | 页面 / 章节 | 清洗后段落 | `ocr_confidence`、`bbox`、`page` |
+| 表格密集 | table extractor | table / logical table region | row chunk / table summary | `table_id`、`row_id`、`column_ids` |
+| FAQ | Q/A parser | FAQ item | question variants + answer | `question_id`、`intent` |
+| 政策 / 合同 | section / clause parser | 条款组 | 条款、例外、定义 | `clause_id`、`valid_from`、`valid_to` |
+| SOP / Runbook | step parser | 阶段 / 任务 | step + 前置条件 | `step_id`、`phase`、`risk_level` |
+
+这个表才是真正的工程入口。  
+你不需要一上来把所有链路都做到极致，但至少要让系统承认：
+
+`不同文档有不同的知识形状。`
 
 ### 10. Parent-Child 双层索引：为什么它经常是质量跃迁点
 
@@ -618,16 +1081,295 @@ Late Chunking 这几年很火，因为它试图倒过来做一件事：
 
 因为这些内容常常需要“周围上下文”才能正确理解当前片段的语义。
 
-#### 13.1 它为什么还没成为默认工程方案
+#### 13.1 先用一个例子把问题讲透
 
-主要有两个原因：
+假设原文是这样：
 
-- 成本高，适合离线，不适合高频实时流水线
-- 工程链路更复杂，对 embedding 模型和处理框架要求更高
+```text
+柏林是德国的首都，也是该国最大的城市。
+它拥有约 370 万人口，是欧洲重要的政治与文化中心。
+这座城市的公共交通系统由地铁、轻轨、公交和区域铁路组成。
+```
+
+如果你先切 chunk：
+
+```text
+chunk A：柏林是德国的首都，也是该国最大的城市。
+chunk B：它拥有约 370 万人口，是欧洲重要的政治与文化中心。
+chunk C：这座城市的公共交通系统由地铁、轻轨、公交和区域铁路组成。
+```
+
+然后分别 embedding：
+
+```text
+embed(chunk A)
+embed(chunk B)
+embed(chunk C)
+```
+
+问题来了：  
+`chunk B` 里只有“它”，`chunk C` 里只有“这座城市”。  
+人能从上文知道它们指柏林，但 embedding model 单独看 `chunk B` / `chunk C` 时，不一定能知道。
+
+于是用户问：
+
+```text
+柏林人口是多少？
+```
+
+`chunk B` 本来应该很相关，但它的 embedding 可能没有强烈的“柏林”语义。  
+这就是传统 chunking 的上下文丢失问题。
+
+Late Chunking 想解决的正是这个：
+
+`不要让 chunk 在完全失去上文的情况下单独形成向量。`
+
+#### 13.2 它到底“late”在哪里
+
+很多人第一次听 Late Chunking，会误以为：
+
+```text
+先不切文档，最后再切文本。
+```
+
+这个理解不够准确。
+
+Late Chunking 不是不要边界。  
+它仍然需要边界，比如句子、段落、标题、token offset。  
+只是这个边界使用得更晚。
+
+传统做法：
+
+```text
+1. 先按边界把文本切成 chunk
+2. 每个 chunk 独立进入 embedding transformer
+3. 每个 chunk 内部 token 做 pooling
+4. 得到每个 chunk embedding
+```
+
+Late Chunking：
+
+```text
+1. 先记录 chunk 边界，例如每个 chunk 对应哪些 token offset
+2. 把更长的一段文本整体送进 long-context embedding transformer
+3. transformer 输出每个 token 的 contextual representation
+4. 再按刚才记录的 chunk 边界，对 token representations 做 pooling
+5. 得到每个 chunk embedding
+```
+
+也就是说：
+
+`chunk 边界不再决定 transformer 能看到多少上下文，而是决定最后对哪些 token 向量做 pooling。`
+
+这句话是 Late Chunking 的核心。
+
+#### 13.3 普通 chunk embedding 和 late chunk embedding 的本质区别
+
+普通 chunking 得到的是相对独立的表示：
+
+```text
+vector_B = embedding_model("它拥有约 370 万人口...")
+```
+
+Late Chunking 得到的是上下文化表示：
+
+```text
+token_reps = embedding_transformer("柏林是德国首都... 它拥有约 370 万人口...")
+vector_B = mean_pool(token_reps[token_start_B : token_end_B])
+```
+
+两者的 `vector_B` 不一样。
+
+普通 `vector_B` 只知道 chunk B 自己写了什么。  
+Late `vector_B` 是在整段文本上下文里形成的，所以“它”对应柏林这个信息有机会被 transformer attention 带进 token representation。
+
+这也是 Jina 文章里说的区别：
+
+- naive chunk embeddings 更接近独立同分布
+- late chunk embeddings 是 contextualized / conditional 的
+
+你可以把它想成：
+
+```text
+普通 chunking：每个孩子单独考试。
+Late chunking：大家先一起读完整篇文章，再分别写自己的摘要。
+```
+
+这个比喻不严谨，但直觉很准。
+
+#### 13.4 它和 overlap、parent-child 有什么区别
+
+这三个方法都在补上下文，但补的位置不同。
+
+| 方法 | 在哪里补上下文 | 本质 |
+| --- | --- | --- |
+| Overlap | 文本切分阶段 | 把相邻文本重复放进 chunk |
+| Parent-Child | 检索返回阶段 | child 负责召回，parent 负责给模型读 |
+| Late Chunking | embedding 表示阶段 | chunk embedding 在更长上下文里形成 |
+
+Overlap 的问题是重复存储、重复召回。  
+Parent-Child 的问题是检索准了，但返回 parent 后可能带来更多噪声。  
+Late Chunking 的特点是：它不一定改变返回文本大小，而是改变 child chunk 的向量质量。
+
+举个例子：
+
+```text
+用户问：柏林人口是多少？
+```
+
+- overlap：希望 chunk B 附近刚好重复到了“柏林”。
+- parent-child：先命中 chunk B，再返回包含 A+B+C 的 parent。
+- late chunking：chunk B 自己的向量已经带有“柏林”上下文，更容易被召回。
+
+所以 Late Chunking 解决的是：
+
+`召回前的表示问题。`
+
+Parent-Child 解决的是：
+
+`召回后的上下文消费问题。`
+
+两者可以组合。
+
+#### 13.5 它和 Contextual Retrieval 又有什么区别
+
+第 4 节还会讲 Contextual Retrieval，这里先给你一个清晰区分。
+
+Contextual Retrieval 的做法是给 chunk 前面显式加一段背景说明：
+
+```text
+背景：本文档介绍柏林的城市概况。
+原文：它拥有约 370 万人口，是欧洲重要的政治与文化中心。
+```
+
+然后用这段增强文本去做 embedding / BM25。
+
+Late Chunking 不改 chunk 文本，而是改 embedding 生成方式：
+
+```text
+原文还是：它拥有约 370 万人口...
+但它的 token representation 是在整段文本上下文中算出来的。
+```
+
+简单记：
+
+```text
+Late Chunking = representation-side contextualization
+Contextual Retrieval = text-side contextualization
+```
+
+前者对 dense embedding 更直接。  
+后者对 dense embedding 和 BM25 都有效，因为它真的把背景文字加进了索引文本。
+
+#### 13.6 一个简化伪代码
+
+普通 chunking 像这样：
+
+```python
+chunks = split_text(document)
+vectors = [embedding_model.encode(chunk) for chunk in chunks]
+```
+
+Late Chunking 的思想像这样：
+
+```python
+chunks = split_text_with_offsets(document)
+
+token_ids = tokenizer(document)
+token_reps = embedding_model.encode_tokens(token_ids)
+
+vectors = []
+for chunk in chunks:
+    start, end = chunk.token_start, chunk.token_end
+    chunk_token_reps = token_reps[start:end]
+    vectors.append(mean_pool(chunk_token_reps))
+```
+
+真实实现比这个复杂，因为要处理：
+
+- tokenizer offset mapping
+- 长文超过 embedding model context window
+- special tokens
+- attention mask
+- pooling 策略
+- batch
+- 多文档边界
+
+但核心思想就是这几行：
+
+`先算 token-level contextual representation，再按 chunk offset pooling。`
+
+#### 13.7 它适合什么
+
+Late Chunking 更适合：
+
+- 长上下文 embedding model 可用的系统
+- 学术论文、报告、法律、政策、技术说明这类上下文依赖强的长文
+- 需要 dense retrieval 质量更高的离线索引
+- chunk 中有大量代词、省略、跨段引用的文档
+- 预算允许更复杂 embedding pipeline 的系统
+
+尤其适合这种情况：
+
+```text
+chunk 本身短，但它的正确语义依赖前后文。
+```
+
+比如：
+
+- “该方案在第二阶段启用。”
+- “这项限制仅适用于企业版。”
+- “上述服务默认关闭。”
+- “它会在 24 小时内失效。”
+
+这些句子单独 embedding 都弱，但在上下文中非常明确。
+
+#### 13.8 它不适合什么
+
+Late Chunking 不太适合：
+
+- 没有 long-context embedding model 的系统
+- 文档极长且无法合理分段的场景
+- 主要靠 BM25 / keyword retrieval 的系统
+- 表格、代码、结构化数据为主的文档
+- 实时 ingestion、低成本、低延迟要求特别强的系统
+- 解析质量很差的 OCR 文档
+
+注意最后一点：Late Chunking 不会修复坏解析。  
+如果 PDF 阅读顺序已经乱了，表格已经碎了，Late Chunking 只是在乱文本上做更复杂的表示。
+
+#### 13.9 它为什么还没成为默认工程方案
+
+主要有四个原因：
+
+1. 成本更高  
+   它依赖 long-context embedding，一次编码更长文本，离线索引成本更高。
+
+2. 工程链路更复杂  
+   你需要保存 chunk token offsets，并在 transformer 输出后做 pooling。
+
+3. 模型支持有限  
+   不是所有 embedding API 都暴露 token-level representations。很多托管 embedding API 只返回整段向量。
+
+4. 对某些文档类型收益有限  
+   代码、表格、FAQ、结构化字段，很多时候结构处理比 late chunking 更重要。
 
 所以你可以把它理解成：
 
 **效果上很有前景，但目前更偏高质量离线索引构建手段，而不是低成本普适方案。**
+
+#### 13.10 工程上怎么选
+
+如果你现在做企业知识库，我会这样排序：
+
+1. 先做好解析和结构化切分。
+2. 加 parent-child 或 sentence window，解决“召回小块、回答要上下文”的问题。
+3. 加 metadata filter、hybrid retrieval、rerank、citation。
+4. 如果长文 dense retrieval 仍然弱，再考虑 Late Chunking。
+
+换句话说：
+
+`Late Chunking 是增强 chunk embedding 的高级手段，不是替代文档解析和结构切分的捷径。`
 
 ### 14. 从信息论和优化视角看 chunk：为什么这不是纯拍脑袋
 

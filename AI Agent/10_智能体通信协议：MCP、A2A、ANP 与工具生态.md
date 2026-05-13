@@ -146,7 +146,29 @@ flowchart LR
 
 **"一 Client 对一 Server"** 这条设计很重要：它让每个 Server 的 capability、会话状态、消息流都彼此隔离，Host 才能安全地对每个 server 做独立的 consent 策略。
 
-### 4.3 Transport：三种选一
+### 4.3 Transport：stdio、Streamable HTTP 与 SSE legacy
+
+先把一个概念钉牢：
+
+**Transport 只解决"消息怎么在 Client 和 Server 之间传过去"，不改变 MCP 的业务语义。**
+
+不管你走 stdio、Streamable HTTP，还是老版本 SSE，传的核心消息仍然是 JSON-RPC：
+
+- `initialize`
+- `tools/list`
+- `tools/call`
+- `resources/read`
+- `prompts/get`
+- `notifications/progress`
+
+所以 Transport 不是"另一套 MCP"，而是 MCP 消息的承载方式。它决定的是：
+
+- 连接怎么建立
+- 消息怎么分帧
+- 谁负责启动 server
+- 断线后怎么处理
+- 能不能跨机器 / 跨用户 / 云部署
+- 权限、鉴权、沙箱放在哪一层做
 
 | Transport | 形态 | 典型场景 | 现状 |
 | --- | --- | --- | --- |
@@ -154,7 +176,182 @@ flowchart LR
 | **Streamable HTTP** | 单一 HTTP endpoint，响应可以是 SSE 也可以是 JSON | 远程 / 跨机器 / SaaS | 2025 新增，推荐 |
 | **SSE**（legacy） | GET 建 SSE，POST 发消息 | 老版本远程 server | 已 deprecated，兼容用 |
 
-选型很直接：**能走 stdio 就 stdio**（零网络开销、进程级隔离、好沙箱）；需要远程 / 多用户 / 云部署时才走 Streamable HTTP。
+严格说，新版 MCP 标准传输主要是两类：
+
+- stdio
+- Streamable HTTP
+
+SSE 是旧版 HTTP+SSE transport，今天更多是"你会在历史实现里遇到"，而不是新项目首选。
+
+#### 4.3.1 stdio：本地子进程传输
+
+stdio 的工作方式最朴素：
+
+1. Host 根据配置启动一个 MCP Server 子进程
+2. Client 往 server 的 `stdin` 写 JSON-RPC 消息
+3. Server 往 `stdout` 写 JSON-RPC 响应 / 通知
+4. Server 的日志只能写到 `stderr`
+
+一个极简心智图是：
+
+```text
+Host / MCP Client
+  │  stdin:  JSON-RPC request
+  ▼
+MCP Server subprocess
+  │  stdout: JSON-RPC response / notification
+  ▼
+Host / MCP Client
+```
+
+stdio 最适合这些场景：
+
+- 本地文件系统
+- 本地 Git 仓库
+- 本地 SQLite
+- 本地命令行工具包装
+- IDE / 桌面客户端插件
+- 每个用户一份独立 server 进程
+
+它的优点非常工程化：
+
+- 不需要开放端口
+- 不需要 HTTP 鉴权
+- Host 可以直接管理进程生命周期
+- 每个 server 天然进程隔离
+- 本地工具延迟低，部署简单
+- 很容易配合沙箱、工作目录、环境变量做权限控制
+
+但 stdio 也有明显边界：
+
+- 只能服务启动它的本地 Host
+- 不适合多用户共享
+- 不适合 SaaS 式远程工具
+- server 崩溃通常意味着这条连接断掉
+- 日志、监控、水平扩展都要 Host 或外部系统额外补
+
+stdio 还有一个非常容易踩的坑：
+
+**server 的 `stdout` 只能写 MCP JSON-RPC 消息，不能随便 `print` 日志。**
+
+因为 stdio 是按 stdout 读协议消息的。  
+如果 server 把普通日志写进 stdout，Client 会把日志当 JSON-RPC 解析，连接很容易直接炸掉。日志应该写 `stderr`。
+
+#### 4.3.2 Streamable HTTP：远程 / 云部署传输
+
+Streamable HTTP 是新版推荐的远程传输形态。
+
+它的核心特点是：
+
+- Server 是一个独立 HTTP 服务
+- 通常暴露一个统一 MCP endpoint，比如 `/mcp`
+- Client 用 HTTP `POST` 发送 JSON-RPC 消息
+- Server 可以直接返回 JSON
+- Server 也可以用 SSE 在响应里流式返回多个消息
+- Client 也可以用 `GET` 建立接收 server 消息的流
+
+一个简化心智图是：
+
+```text
+MCP Client
+  │ POST /mcp  JSON-RPC request
+  ▼
+Remote MCP Server
+  │ HTTP JSON response
+  │ or text/event-stream
+  ▼
+MCP Client
+```
+
+它适合这些场景：
+
+- MCP Server 部署在云上
+- 多个 Host / Agent 共享同一个工具服务
+- 工具背后是 SaaS 或企业内部平台
+- 需要统一鉴权、审计、限流、网关
+- 需要跨机器访问
+- 需要更标准的日志、指标、扩缩容
+
+Streamable HTTP 的价值不只是"能远程调用"。  
+它更像是把 MCP Server 从"本地插件"升级成"可运营服务"。
+
+这意味着你可以接入传统后端治理能力：
+
+- TLS
+- OAuth / API Key / mTLS
+- 网关鉴权
+- 速率限制
+- 访问日志
+- 多租户隔离
+- 灰度发布
+- 服务端指标
+
+但它也把很多网络世界的问题带了进来：
+
+- HTTP 鉴权必须自己设计
+- 需要处理跨域和 Origin 校验
+- 本地 HTTP server 要避免绑定到 `0.0.0.0`
+- 长连接和 SSE 要考虑代理、超时、断线重连
+- 多实例部署时要考虑 session / event resume
+- 远程工具的权限边界不能只靠模型自觉
+
+一个很实用的安全原则是：
+
+**本地 stdio 的风险主要是"本机权限过大"，远程 HTTP 的风险主要是"网络边界打开后谁都可能来敲门"。**
+
+所以 Streamable HTTP 一定要把认证、授权、Origin 校验、审计当成基础设施，而不是上线前再补。
+
+#### 4.3.3 SSE legacy：老版 HTTP+SSE 传输
+
+SSE legacy 是旧版远程 MCP transport。
+
+它通常是两个端点：
+
+- `GET /sse`：Client 打开 SSE 连接，Server 持续向 Client 推消息
+- `POST /messages`：Client 把 JSON-RPC 消息发给 Server
+
+心智图大概是：
+
+```text
+MCP Client ── GET /sse ───────────────► MCP Server
+MCP Client ◄─ event-stream messages ── MCP Server
+
+MCP Client ── POST /messages ────────► MCP Server
+```
+
+它能解决早期远程流式问题，但工程体验不如 Streamable HTTP：
+
+- 两个端点，部署和配置更绕
+- 连接初始化流程更特殊
+- 代理、网关、负载均衡更容易出边界问题
+- 新版协议演进主要围绕 Streamable HTTP
+
+所以今天对 SSE legacy 的建议是：
+
+- 新项目不要优先选
+- 遇到老 server / 老 client 时兼容
+- 有条件就迁移到 Streamable HTTP
+- 迁移期可以同时保留 legacy SSE 和新版 `/mcp` endpoint
+
+#### 4.3.4 三者怎么选
+
+一个足够实用的判断规则是：
+
+| 问题 | 推荐选择 |
+| --- | --- |
+| 工具只给本机 Host 用？ | stdio |
+| 工具需要访问本地文件 / 本地仓库？ | stdio |
+| server 需要由 Host 启动和关闭？ | stdio |
+| 工具要给多个用户 / 多个 Agent 共享？ | Streamable HTTP |
+| 工具部署在云上或企业内网服务里？ | Streamable HTTP |
+| 需要统一鉴权、限流、审计、指标？ | Streamable HTTP |
+| 对接历史 MCP server，只支持老 HTTP+SSE？ | SSE legacy |
+
+再压缩成一句话：
+
+**本地私有工具优先 stdio，远程共享工具优先 Streamable HTTP，SSE 只作为 legacy 兼容。**
+
+这也解释了为什么很多桌面端 / IDE 早期默认 stdio，而企业级 MCP 服务会越来越多走 Streamable HTTP。
 
 ### 4.4 完整生命周期
 
