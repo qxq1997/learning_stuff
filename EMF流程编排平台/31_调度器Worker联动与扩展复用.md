@@ -1315,6 +1315,22 @@ workflow CANCELLING
 取消不是只改控制面状态,还会尽力处理执行面副作用。
 ```
 
+### 6. Death / recovery 协议
+
+```text
+worker 死亡由 task lease 和 worker heartbeat 发现;
+scheduler 死亡由 scheduler lease / leader election / 多实例 CAS 接管;
+服务恢复后先 reconcile,再恢复 dispatch。
+```
+
+保证:
+
+```text
+某个进程死掉不会让 workflow 永久卡住,也不会靠盲目重跑制造重复副作用。
+```
+
+详细恢复路径见第 33 章《Worker 与 Scheduler 宕机恢复》。
+
 ## 外部长任务怎么联动
 
 对于 Databricks/Spark/SQL 这类长任务,不要把“submit 成功”当成 task 成功。

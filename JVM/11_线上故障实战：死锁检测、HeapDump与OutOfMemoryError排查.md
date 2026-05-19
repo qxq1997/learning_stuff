@@ -4,6 +4,7 @@
 
 - 知道线上服务器上如何快速定位 Java 进程，并确认它的参数和身份。
 - 理解死锁应该怎么查，为什么 `jstack` 和 `JConsole` 都有价值。
+- 能先判断一个线上现象更像内存问题，还是更像线程问题。
 - 说清 Heap Dump 文件到底是什么，为什么它是 OOM 排查最重要的现场证据。
 - 理解从生成 Heap Dump 到使用 MAT 分析 OOM 的完整链路。
 - 能把工具、参数、样例代码和分析结论串成一套完整的排障思路。
@@ -312,7 +313,124 @@ Heap Dump 文件有了之后，最常见的下一步就是导入 `MAT`。
 
 真正能帮你定位根因的，往往是 Retained Heap 和引用路径，而不是单个对象自己的大小。
 
-### 8. 一条完整的 OOM / 死锁排障链路
+### 8. 怎么判断更像内存问题还是线程问题
+
+线上故障刚出现时，最容易混乱的是：
+
+- 服务变慢了
+- 请求卡住了
+- CPU 高了
+- 内存涨了
+- 日志里出现了 OOM
+
+这时候不要一上来就认定是某一种问题，而是先做一个分流判断：
+
+**内存问题看 GC 和对象，线程问题看线程状态和等待点。**
+
+更实用的判断顺序是：
+
+```bash
+jstat -gcutil <pid> 1000
+jcmd <pid> GC.heap_info
+jcmd <pid> Thread.print
+jstack -l <pid>
+```
+
+也可以记成一句话：
+
+**先看 GC 是否异常；GC 异常优先怀疑内存，GC 正常但服务卡住再重点看线程。**
+
+#### 8.1 更像内存问题的信号
+
+如果你看到下面这些现象，就更像内存问题：
+
+- `Full GC` 很频繁
+- 老年代使用率长期很高
+- `Full GC` 之后老年代也降不下来
+- 应用停顿时间和 GC 时间高度重合
+- 堆内存持续上涨，业务流量回落后也不明显下降
+
+常见报错包括：
+
+```text
+java.lang.OutOfMemoryError: Java heap space
+java.lang.OutOfMemoryError: GC overhead limit exceeded
+java.lang.OutOfMemoryError: Metaspace
+java.lang.OutOfMemoryError: Direct buffer memory
+```
+
+这种时候重点证据通常来自：
+
+- GC 日志
+- `jstat`
+- `jcmd <pid> GC.heap_info`
+- Heap Dump
+- MAT 里的 Dominator Tree 和引用链
+
+排查核心不是问“哪个对象最大”，而是问：
+
+**为什么这些对象还活着？是谁一直引用着它们？**
+
+#### 8.2 更像线程问题的信号
+
+如果 GC 看起来比较正常，但服务仍然卡住、不返回、吞吐下降，就要重点看线程。
+
+更像线程问题的现象包括：
+
+- 大量线程处于 `BLOCKED`
+- 大量线程处于 `WAITING` 或 `TIMED_WAITING`
+- 很多线程卡在同一把锁上
+- 很多线程卡在数据库连接池、RPC 调用、HTTP 调用或文件 IO 上
+- 线程池活跃线程数打满，队列持续堆积
+- CPU 高但 GC 不高，可能是业务线程死循环、自旋或锁竞争
+
+常见报错或现象包括：
+
+```text
+java.lang.OutOfMemoryError: unable to create new native thread
+Found one Java-level deadlock
+thread pool exhausted
+connection timeout
+```
+
+这里要特别注意：
+
+```text
+java.lang.OutOfMemoryError: unable to create new native thread
+```
+
+它虽然也是 `OutOfMemoryError`，但通常不是 Java 堆内存不够，而是线程创建太多，耗尽了操作系统线程资源或 native memory，所以更偏线程问题。
+
+这种时候重点证据通常来自：
+
+- `jstack -l <pid>`
+- `jcmd <pid> Thread.print`
+- 线程池监控
+- 连接池监控
+- 慢调用日志和链路追踪
+
+排查核心不是问“内存为什么涨”，而是问：
+
+**线程都卡在哪里？它们在等锁、等 IO，还是等连接池资源？**
+
+#### 8.3 两类问题经常互相影响
+
+真实线上故障经常不是纯粹的“内存问题”或“线程问题”。
+
+比如：
+
+- 线程阻塞导致请求堆积，每个请求又持有一批对象，于是堆内存也上涨
+- 数据库连接池耗尽导致大量业务线程等待，线程栈和请求上下文占住内存
+- 内存压力过大导致频繁 `Full GC`，所有业务线程都被 STW 暂停，看起来像线程卡死
+- 线程创建过多导致 native memory 被耗尽，最后抛出 `unable to create new native thread`
+
+所以排障时可以先分流，但不要把结论说死。
+
+更稳的表达是：
+
+**GC 异常、老年代下不来，优先看内存；GC 正常、请求卡住，优先看线程；两边都有异常时，要看谁先异常，谁是根因。**
+
+### 9. 一条完整的 OOM / 死锁排障链路
 
 把前面这些工具和动作串起来，线上排障可以先按下面这条链路走：
 
@@ -339,10 +457,10 @@ flowchart TD
 ## 小结（3-5 条关键点）
 
 - 线上排障第一步永远是先识别正确的 Java 进程，确认它的身份和参数。
+- 判断问题方向时，先看 GC 是否异常；GC 异常优先怀疑内存，GC 正常但服务卡住再重点看线程。
 - 死锁排查最经典的证据来自 `jstack`，图形化工具如 `JConsole` 和 `VisualVM` 则更适合直观查看线程状态。
 - Heap Dump 是 JVM 在某一时刻的内存快照，是排查 OOM 和内存泄漏最重要的现场证据。
 - `-XX:+HeapDumpOnOutOfMemoryError` 和 `-XX:HeapDumpPath` 是非常值得默认配置的线上保命参数。
-- MAT 分析 Heap Dump 时，要重点看引用链、Retained Heap 和 Dominator Tree，而不是只看哪个对象表面上最大。
 
 ## 问题（检测你对当前章节内容是否了解）
 
