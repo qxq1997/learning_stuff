@@ -103,6 +103,8 @@ Follower 会等待 Leader 的心跳。
 为什么要多数派？因为任意两个多数派一定有交集。  
 这个交集能防止两个互相隔离的小团体同时都认为自己是合法 Leader。
 
+![Raft 的角色转换与 Leader 选举](assets/09_interview_supplement/20_raft_election.png)
+
 ### 5. 脑裂时 Raft 怎么处理
 
 脑裂不是指真的出现两个脑袋，而是网络分区后，不同节点看到的世界不一样。
@@ -151,6 +153,8 @@ sequenceDiagram
     L->>L: 多数派成功，提交日志
     L-->>C: 返回成功
 ```
+
+![Raft 从共识日志到状态机](assets/09_interview_supplement/21_raft_log_replication.png)
 
 这里要分清三个词：
 
@@ -248,6 +252,18 @@ Raft 通常不是用来承载高 QPS 业务数据写入的第一选择。
 
 所以面试里不要把 Raft 说成“解决所有分布式一致性问题的银弹”。  
 它擅长的是多副本状态复制和故障切换，不是替代所有业务层事务设计。
+
+### 10.1 Paxos 与 ZAB 的定位
+
+Paxos 解决的是提议者、接受者在故障和并发提案下如何对一个值达成共识。Multi-Paxos 会引入稳定 Leader 来连续提交日志；Raft 则从设计上把 Leader 选举和日志复制表达得更便于工程实现和解释。
+
+![Paxos 的角色和消息关系](assets/09_interview_supplement/22_paxos.png)
+
+ZAB 是 ZooKeeper 用于原子广播和崩溃恢复的协议。正常运行时 Leader 为写请求分配事务顺序并广播给 Follower，收到法定数量确认后提交；Leader 故障时先完成恢复和重新选主，再继续广播新事务。
+
+![ZAB 的 Leader 广播流程](assets/09_interview_supplement/23_zab_flow.png)
+
+它们都依赖法定多数避免互相冲突的决定，但面试中应区分定位：Raft/Paxos 是通用共识讨论主线，ZAB 是理解 ZooKeeper 写入顺序与协调能力的背景。
 
 ### 11. 面试里怎么讲 Raft
 

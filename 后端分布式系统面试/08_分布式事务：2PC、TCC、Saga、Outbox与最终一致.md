@@ -24,6 +24,14 @@
 3. 支付服务创建支付单
 4. 营销服务锁定优惠券
 
+在微服务中，每个服务拥有自己的数据库：账户服务挂掉时，已经提交的订单和库存操作无法由账户库的本地事务撤销。
+
+![跨服务事务的部分成功问题](assets/09_interview_supplement/09_cross_service_transaction.png)
+
+即使代码仍在一个单体应用中，只要账单和流水已经落到两个物理数据库连接，`@Transactional` 也不能天然把它们包装成一个原子提交。
+
+![跨库后本地事务失效](assets/09_interview_supplement/10_cross_database_transaction.png)
+
 只要这些步骤跨服务、跨库、跨消息系统，就会出现：
 
 - 订单成功，库存失败
@@ -236,6 +244,8 @@ flowchart LR
     E --> F["MQ"]
     F --> G["下游消费"]
 ```
+
+![本地消息表驱动最终一致](assets/09_interview_supplement/11_outbox_eventual_consistency.png)
 
 Outbox 的优点是：
 
