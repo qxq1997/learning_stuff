@@ -1622,52 +1622,327 @@ flowchart TD
 
 这部分值得单独说，因为很多坑不是算法本身的问题，而是你“相信了框架默认值”。
 
-#### 19.1 LangChain
+更准确地说，chunk 工具选择不是在问：
 
-优点：
+`“LangChain、LlamaIndex、Unstructured 哪个更高级？”`
 
-- 生态全
-- 各种 splitter 都能快速接上
-- Demo 跑起来快
+而是在问：
 
-缺点：
+`“我现在缺的是解析能力、切分能力、节点组织能力，还是整条 ingestion pipeline 的治理能力？”`
 
-- 版本变化快
-- abstraction 层多
-- 某些默认行为并不适合中文或复杂文档
+这几个能力不是一回事。
 
-一个很典型的工程事故就是：  
-框架升级后，separator 优先级或递归切分逻辑变了，线上 chunk 分布突然失真。
+#### 19.1 先分清：工具到底解决哪一层问题
 
-#### 19.2 LlamaIndex
+很多团队选型会混乱，是因为把下面几层全叫成“chunk 工具”：
 
-优点：
+| 层次 | 解决的问题 | 常见工具方向 | 不能指望它解决什么 |
+| --- | --- | --- | --- |
+| Parser | 把 PDF、Word、HTML、Markdown、代码等转成结构化文本和元素 | Unstructured、专用 PDF/Office parser、Markdown parser、tree-sitter | 不自动保证最终 chunk 策略合理 |
+| Splitter | 把已经解析好的文本按规则切成块 | LangChain text splitters、自研 splitter | 不负责复杂版面恢复和权限建模 |
+| Node / Index Framework | 组织 document、node、metadata、关系和索引流程 | LlamaIndex、LangChain retriever 生态 | 不替你判断文档语义边界 |
+| Domain Chunker | 按业务结构定制切分 | 自研规则、AST、表格抽取、合同条款解析 | 研发成本更高，需要测试和维护 |
 
-- 更专注索引和节点组织
-- 某些 parser 在长文处理上体验更细致
+所以第一步不是选品牌，而是判断：
 
-缺点：
+- 如果输入已经是干净 Markdown 或纯文本，重点是 `splitter`。
+- 如果输入是 PDF、扫描件、PPT、Word，重点先是 `parser`。
+- 如果你需要 parent-child、sentence window、node metadata、ingestion pipeline，重点是 `node/index framework`。
+- 如果是代码、表格、合同、配置手册，通用 splitter 往往只能打底，最终还是需要 `domain chunker`。
 
-- 如果你的整体栈并不围绕它，可能引入额外心智负担
+#### 19.2 LangChain：适合快速建立 baseline，但要显式控制规则
 
-#### 19.3 Unstructured
+LangChain 的 text splitter 很适合做第一版 baseline。
 
-优点：
+适合用它的场景：
 
-- 复杂 PDF、Office 文档、表格处理能力强
+- 文档已经被清洗成纯文本或 Markdown。
+- 你想快速比较 `chunk_size`、`overlap`、separator 的效果。
+- 项目本来就用了 LangChain 的 loader、retriever、chain 生态。
+- 你需要快速把 Demo 变成一个可测的最小闭环。
 
-缺点：
+不适合完全依赖它的场景：
 
-- 高精度模式贵且慢
-- 上游解析一旦不稳定，后面全线受影响
+- 原始 PDF 阅读顺序混乱。
+- 表格、图片、代码块很多。
+- 中文标点和标题层级很重要，但你没有自定义 separator。
+- 需要精确保存 page、section、source offset、权限字段。
 
-所以工具选择的正确姿势不是：
+使用方式上，不要只写：
 
-`“哪个框架更高级？”`
+```python
+splitter = RecursiveCharacterTextSplitter()
+chunks = splitter.split_text(text)
+```
 
-而是：
+这等于把切分策略交给默认值了。
 
-`“哪个工具在我的文档类型、性能预算和维护成本下最合适？”`
+更稳的做法是显式声明几个东西：
+
+```python
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=600,
+    chunk_overlap=80,
+    separators=[
+        "\n## ",
+        "\n### ",
+        "\n\n",
+        "。", "！", "？", "；",
+        "\n",
+        " ",
+        "",
+    ],
+    length_function=count_tokens,
+)
+
+documents = splitter.create_documents(
+    texts=[clean_text],
+    metadatas=[{
+        "doc_id": doc_id,
+        "doc_version": doc_version,
+        "source": source,
+        "chunking_pipeline": "langchain_recursive_cjk_v1",
+    }],
+)
+```
+
+这里有几个关键点：
+
+1. `separators` 要按你的语料调整，中文文档不能只靠英文空格和换行。
+2. `length_function` 尽量接目标 embedding / LLM 的 tokenizer，而不是粗暴按字符数。
+3. chunk 生成后要补齐 metadata，不然后面引用、回放、权限过滤都会很痛苦。
+4. `chunking_pipeline` 要写版本号，方便以后对比和回滚。
+
+LangChain 更像一把好用的刀。
+刀本身没问题，但你要知道自己在切肉、切菜，还是切骨头。
+
+#### 19.3 LlamaIndex：适合把 chunk 当成 Node 来管理
+
+LlamaIndex 的优势不只是“也能切文本”，而是它更强调：
+
+- `Document`
+- `Node`
+- `metadata`
+- node relationship
+- ingestion pipeline
+- index / retriever
+
+如果你的 RAG 系统开始需要 parent-child、sentence window、prev/next 关系，LlamaIndex 的抽象会比单独调用一个 splitter 更自然。
+
+适合用它的场景：
+
+- 你希望 chunk 不只是字符串，而是带关系的 `Node`。
+- 你需要保留 section、document、prev/next、parent 等关系。
+- 你想快速实验 sentence-level retrieval、window replacement、hierarchical retrieval。
+- 你的系统本来就使用 LlamaIndex 做索引和检索编排。
+
+基本用法可以理解成：
+
+```python
+documents = [
+    Document(
+        text=clean_text,
+        metadata={
+            "doc_id": doc_id,
+            "doc_version": doc_version,
+            "source": source,
+        },
+    )
+]
+
+node_parser = SentenceSplitter(
+    chunk_size=700,
+    chunk_overlap=100,
+)
+
+nodes = node_parser.get_nodes_from_documents(documents)
+```
+
+这类代码的重点不是 API 本身，而是思想：
+
+- 原始文档先进 `Document`
+- 切出来的是 `Node`
+- `Node` 继承或携带 metadata
+- 后续检索、rerank、引用都围绕 node 做
+
+如果要做 Parent-Child，落地时通常会变成两层：
+
+```text
+原始文档
+-> parent node：按标题 / section 切，保持语义完整
+-> child node：在 parent 内继续切，用来做高精度召回
+```
+
+检索时：
+
+1. 用 child node 做 embedding 检索。
+2. 命中 child 后，通过 `parent_id` 找到 parent。
+3. 最终给模型的上下文可以是 child 附近窗口，也可以是 parent section。
+
+这种方式比单层 chunk 更适合：
+
+- 技术文档解释
+- 操作手册
+- 制度条款
+- 长 Wiki 页面
+
+但也要注意一个问题：
+如果你的业务系统已经有成熟的数据模型和索引 pipeline，只为了切 chunk 引入完整 LlamaIndex，可能会让工程栈变重。
+
+#### 19.4 Unstructured：适合解决复杂文档解析，不等于最终 chunk 策略
+
+Unstructured 的价值主要在 parser 侧。
+
+它适合处理：
+
+- PDF
+- Word
+- PPT
+- HTML
+- 带标题、列表、表格、页码、版面元素的复杂文档
+
+它的强项不是“神奇地给你最佳 chunk size”，而是先把文档拆成更接近人类阅读结构的元素，例如：
+
+- Title
+- NarrativeText
+- ListItem
+- Table
+- Header / Footer
+- PageBreak
+
+这对 chunk 非常重要。
+因为如果 parser 已经把标题、正文、表格、页码都混成一坨，再高级的 splitter 也只是在坏输入上努力。
+
+更稳的使用方式通常是两段式：
+
+```text
+原始文件
+-> Unstructured partition，得到 element 列表
+-> 自己根据 element type、title hierarchy、page metadata 做 chunk
+```
+
+而不是：
+
+```text
+原始文件
+-> Unstructured 一键 chunk
+-> 直接入库
+```
+
+如果使用它自己的 chunking strategy，也要先明确策略含义：
+
+- `basic` 更像把相邻元素合并到目标大小以内。
+- `by_title` 更强调标题边界，适合标题结构可靠的文档。
+- `by_similarity` 会引入语义相似度判断，适合主题跳变明显的长文，但成本和可解释性都要评估。
+
+使用时建议至少保留这些 metadata：
+
+```json
+{
+  "doc_id": "policy_123",
+  "doc_version": "v7",
+  "page_number": 12,
+  "element_id": "el_891",
+  "element_type": "Table",
+  "section_path": ["报销制度", "差旅标准", "住宿上限"],
+  "chunking_pipeline": "unstructured_partition_custom_chunk_v2"
+}
+```
+
+这样后面才能做：
+
+- page 级引用
+- 表格行定位
+- 文档版本回放
+- 按 element type 分析效果
+- 针对 PDF 解析异常做排查
+
+Unstructured 的典型坑也很明确：
+
+- 高精度解析慢，成本高。
+- 扫描 PDF 依赖 OCR，错误会被后续链路放大。
+- 表格抽取不稳定时，chunk 看起来完整，实际语义已经错了。
+- 页眉页脚如果没清理，会污染大量 chunk。
+
+所以它更适合作为复杂文档入口，不应该被当作“最终 chunk 策略的唯一裁判”。
+
+#### 19.5 一个实际选型矩阵
+
+可以按下面这个方式快速判断：
+
+| 场景 | 推荐起点 | 原因 |
+| --- | --- | --- |
+| 纯文本、Markdown、简单 Wiki | LangChain splitter 或自研递归 splitter | 成本低，容易调参，容易做 baseline |
+| 标题层级清楚的内部文档 | Markdown / HTML parser + section-aware chunker | 标题结构比固定 token 更重要 |
+| PDF、Word、PPT | Unstructured / 专用 parser + 自研 chunker | 先恢复结构，再谈切分 |
+| 代码仓库 | tree-sitter / AST-aware chunker | 函数、类、配置块边界比 token 数重要 |
+| 表格密集文档 | 表格抽取 + row chunk + table summary | 普通文本 splitter 很容易切坏表头和单位 |
+| 需要 parent-child、sentence window、node 关系 | LlamaIndex 或自研 Node 模型 | 重点是节点关系和上下文回填 |
+| 已有成熟后端 pipeline | 自研 chunker + 少量工具库 | 避免为了框架重写数据链路 |
+
+这里最容易犯的错是：
+因为某个框架 Demo 很顺手，就把所有文档都塞进同一套默认 splitter。
+
+生产里更常见的做法应该是：
+
+```text
+document profile
+-> 判断文档类型
+-> 路由到不同 parser
+-> 路由到不同 chunk strategy
+-> 输出统一 Chunk schema
+```
+
+也就是说，工具可以不同，但最后进入索引的 chunk schema 要统一。
+
+#### 19.6 工具落地时怎么用：先验收输出，再接向量库
+
+不管选哪个工具，都不要一上来就接 embedding 和向量库。
+正确顺序应该是：
+
+1. 抽 50 到 100 篇代表性文档。
+2. 跑 parser 和 chunker。
+3. 把 chunk 输出成人能看的 Markdown / JSONL。
+4. 人工检查切分结果。
+5. 再跑检索评测。
+6. 最后才批量入库。
+
+人工检查时重点看这些东西：
+
+- 标题有没有和正文分离。
+- 表格有没有丢表头、单位、caption。
+- 代码块有没有被切断。
+- 步骤说明有没有被拆散。
+- chunk 有没有大量页眉页脚、目录、版权信息。
+- 中文句子有没有在奇怪位置被切开。
+- overlap 有没有制造大量重复 chunk。
+
+工程上还要为每个工具版本留下可观测指标：
+
+```text
+chunk_count_per_doc
+avg_chunk_tokens
+p50/p95_chunk_tokens
+empty_chunk_ratio
+duplicate_chunk_ratio
+table_chunk_ratio
+code_chunk_ratio
+orphan_title_ratio
+oversized_chunk_ratio
+```
+
+如果升级框架后这些指标突然变化，就要先怀疑 chunk pipeline，而不是马上怀疑 embedding 模型。
+
+最后给一个很实用的使用原则：
+
+`工具负责提高起点，评测负责决定能不能上线，自研规则负责补齐业务边界。`
+
+换句话说：
+
+- V1 可以用 LangChain / LlamaIndex 快速建立 baseline。
+- 复杂 PDF、Office 文档可以用 Unstructured 做解析入口。
+- 代码、表格、合同、制度类文档要逐步沉淀专门策略。
+- 上线后必须冻结工具版本、记录 pipeline version、保留重建能力。
 
 ### 20. 一个更务实的三阶段成长路线
 
@@ -1755,3 +2030,4 @@ flowchart TD
 3. Parent-Child 为什么经常能显著改善效果？它真正缓解的是哪一个矛盾？
 4. 如果你的系统检索准确率下降了，你会怎么判断问题到底出在 chunk、embedding、检索还是生成？
 5. 面对技术文档、法律文书、新闻文章这三类数据，你会怎么设计不同的 chunk 策略？
+6. 如果你的知识源同时包含 Markdown、PDF、代码仓库和表格，你会怎么选择 LangChain、LlamaIndex、Unstructured 或自研 chunker？上线前你会检查哪些 chunk 输出指标？
