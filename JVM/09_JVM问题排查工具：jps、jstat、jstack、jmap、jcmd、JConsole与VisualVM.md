@@ -6,6 +6,7 @@
 - 知道不同症状应该优先看哪些工具，例如高 CPU、Full GC 频繁、线程卡死、疑似内存泄漏分别怎么下手。
 - 分清命令行工具、可视化工具和第三方分析工具分别适合什么场景。
 - 能说清 `jps`、`jstat`、`jstack`、`jmap`、`jcmd` 这些命令各自最核心的价值。
+- 能通过一张速查表快速判断：当前现象应该先用哪个命令、再用哪个工具深挖。
 - 为后面做死锁分析、Heap Dump 分析、OOM 定位建立工具基础。
 
 ## 内容讲解（核心概念，用类比、例子、图示说清楚）
@@ -37,7 +38,55 @@ JVM 排障和临床看病很像。
 
 如果脑子里先有这张图，工具就不再是一堆零碎命令，而是一条诊断链路。
 
-### 2. JDK 自带的可视化工具
+### 2. 常用排查命令和工具速查表
+
+先放一张总表。  
+排障时不要按“我记得哪个命令”来选工具，而要按“我现在要回答什么问题”来选。
+
+| 工具 / 命令 | 主要作用 | 适用场合 | 常用方式 | 注意点 |
+| --- | --- | --- | --- | --- |
+| `ps` | 查看进程列表和启动命令 | 不确定 Java 进程是谁、`jps` 不可用 | `ps -ef \| grep java` | 只能看到进程层面，不能直接看 JVM 内部状态 |
+| `top` | 看进程 CPU、内存总体占用 | 先判断是不是某个 Java 进程 CPU / 内存异常 | `top -p <pid>` | `RES` 高不等于一定是 Java 堆高 |
+| `top -Hp` | 看进程内部线程 CPU | CPU 飙高，要找具体高 CPU 线程 | `top -Hp <pid>` | 线程 ID 需要转成十六进制后去线程栈里找 `nid` |
+| `printf` | 十进制线程 ID 转十六进制 | 配合 `top -Hp` 和 `jstack` 定位高 CPU 线程 | `printf "%x\n" <tid>` | 只是辅助命令，不是 JVM 工具 |
+| `free` | 查看系统内存和 swap | 判断系统内存是否紧张、是否发生 swap | `free -m` | swap 明显使用可能导致 Java 服务抖动 |
+| `vmstat` | 看 CPU、内存、上下文切换、运行队列 | 判断系统整体是否 CPU 饱和、频繁切换或内存压力大 | `vmstat 1` | 适合看趋势，不适合直接定位代码 |
+| `iostat` | 看磁盘 IO | 怀疑日志、dump、磁盘读写拖慢服务 | `iostat -x 1` | `%util`、`await` 高时要结合业务日志和磁盘情况看 |
+| `df` | 看磁盘空间 | 日志写满、dump 写失败、服务异常退出 | `df -h` | 磁盘满会影响日志、临时文件、heap dump |
+| `netstat` / `ss` | 看网络连接和端口 | 怀疑连接数异常、端口监听、TIME_WAIT、下游连接堆积 | `netstat -antp \| grep <pid>` / `ss -antp` | 新系统更推荐 `ss`，但很多老环境仍常用 `netstat` |
+| `lsof` | 看进程打开的文件、端口、句柄 | 怀疑文件句柄泄漏、端口占用、日志文件过多 | `lsof -p <pid>` | 句柄数异常要结合 `ulimit -n` |
+| `jps` | 查看 Java 进程 | 快速确认 JVM 进程、主类、Jar、参数 | `jps -lvm` | 可能受用户权限、JDK 安装完整性影响 |
+| `jcmd` | JVM 综合诊断入口 | 查看参数、线程、堆、类直方图、heap dump、JFR 等 | `jcmd <pid> VM.flags`、`jcmd <pid> Thread.print` | 现代 JDK 中优先级很高，很多场景可替代老命令 |
+| `jstat` | 查看 GC、类加载、编译等统计趋势 | 判断 YGC / FGC 是否频繁、Old / Metaspace 是否升高 | `jstat -gcutil <pid> 1000` | 只能看趋势，不能告诉你具体谁泄漏 |
+| `jstack` | 生成线程快照 | 查死锁、线程阻塞、线程池打满、服务假死、高 CPU 线程栈 | `jstack -l <pid>` | 建议连续抓 2-3 次，单次线程栈只是瞬间快照 |
+| `jmap` | 看对象直方图、生成 Heap Dump | 查堆对象分布、疑似内存泄漏 | `jmap -histo <pid>`、`jmap -dump:format=b,file=heap.hprof <pid>` | `heap dump` 很重，生产高峰慎用；`-histo:live` 可能触发 Full GC |
+| `jinfo` | 查看或调整部分 JVM 参数 | 确认 JVM flags、系统属性 | `jinfo -flags <pid>` | 新版本很多场景更推荐 `jcmd VM.flags` |
+| `JConsole` | JMX 图形化监控 | 快速看堆、线程、类加载、MBean、死锁 | 启动 `jconsole` 后连接进程 | 适合观察，不适合深度内存泄漏分析 |
+| `VisualVM` | 图形化综合诊断 | 看 CPU、线程、堆、采样、Heap Dump、Thread Dump | 启动 `jvisualvm` 或独立 VisualVM | 适合本地和测试环境，线上连接要注意权限和开销 |
+| JFR / JMC | 低开销运行时事件记录和分析 | 线上性能分析、CPU、锁、分配、GC、IO 综合定位 | `jcmd <pid> JFR.start ...`，再用 JMC 分析 | 很适合线上长期或短时间诊断，注意文件大小和采样配置 |
+| NMT | Native Memory 分析 | `RES` 高但 Java heap 不高，怀疑堆外或 native memory | 启动加 `-XX:NativeMemoryTracking=summary`，查看 `jcmd <pid> VM.native_memory summary` | 需要提前开启；`detail` 开销更高 |
+| MAT | Heap Dump 深度分析 | 查 Java 堆泄漏、引用链、Retained Heap | 打开 `.hprof`，看 Leak Suspects / Dominator Tree | 分析的是 dump 时刻的堆现场，不是实时数据 |
+| GCeasy / GCViewer | GC 日志分析 | 分析 GC pause、频率、吞吐、Full GC、G1/ZGC 日志 | 上传或导入 GC log | 适合报告化分析，但结论要结合业务时序 |
+| Arthas | 在线 Java 诊断 | 不重启查看线程、方法耗时、调用参数、类加载、heapdump | `dashboard`、`thread -n 5`、`thread -b`、`trace`、`watch` | 功能强，但线上使用要有权限和规范，避免误操作 |
+| async-profiler | 低开销火焰图 | CPU 高、锁竞争、对象分配过快 | `./profiler.sh -d 30 -e cpu -f cpu.html <pid>` | 适合定位热点代码，比只看线程栈更直观 |
+| JProfiler / YourKit | 商业性能分析 | 深度 CPU、内存、线程、分配分析 | 本地或附加到目标 JVM | 功能强但更重，生产使用要谨慎 |
+
+再把它压缩成几条“第一反应”：
+
+| 现象 | 第一反应 | 下一步 |
+| --- | --- | --- |
+| 不知道哪个 Java 进程有问题 | `jps -lvm` / `ps -ef \| grep java` | 确认 PID、启动参数和业务实例 |
+| CPU 高 | `top -Hp <pid>` | 转十六进制后用 `jcmd Thread.print` / `jstack` 找代码栈 |
+| 内存高 | `top` + `jstat -gcutil` | 判断是 Java heap、Metaspace、Direct Memory 还是 native memory |
+| Old 区持续上涨 | `jstat -gcutil` | `jcmd GC.class_histogram`，必要时 heap dump + MAT |
+| Full GC 频繁 | `jstat` + GC log | 看 GC 后 Old 是否下降，再判断泄漏、堆太小、大对象或 Metaspace |
+| 服务假死 / 接口卡住 | `jcmd Thread.print` | 连续抓 3 次线程栈，看 BLOCKED、WAITING、DB、Redis、HTTP |
+| 疑似死锁 | `jstack -l` / `jcmd Thread.print -l` | 搜 `Found one Java-level deadlock`，再定位锁顺序 |
+| RSS 高但堆不高 | `jcmd GC.heap_info` + NMT | 看 Direct Memory、Thread、Class、Code、Internal |
+| 需要看方法级热点 | JFR / async-profiler / Arthas | CPU 火焰图、分配火焰图、`trace`、`watch` |
+| 已经拿到 `.hprof` | MAT | 看 Leak Suspects、Dominator Tree、Path to GC Roots |
+
+### 3. JDK 自带的可视化工具
 
 #### JConsole
 
@@ -93,12 +142,12 @@ JVM 排障和临床看病很像。
 
 但如果要做非常深的性能分析，商业工具如 `JProfiler`、`YourKit` 往往仍然更强。
 
-### 3. JDK 自带的命令行工具
+### 4. JDK 自带的命令行工具
 
 图形化工具很好用，但线上服务器很多时候你根本没有图形界面。  
 这时候，真正最常用的还是命令行工具。
 
-#### 3.1 `jps`：先找到你要看的 Java 进程
+#### 4.1 `jps`：先找到你要看的 Java 进程
 
 `jps` 的全称是 `JVM Process Status`。  
 它的作用非常像 UNIX 里的 `ps`，但它专门看 JVM 进程。
@@ -145,7 +194,7 @@ jps -m
 ps -ef | grep java
 ```
 
-#### 3.2 `jstat`：看 GC 和内存趋势
+#### 4.2 `jstat`：看 GC 和内存趋势
 
 `jstat` 的全称是 `JVM Statistics Monitoring Tool`。  
 它最擅长干的事情是：
@@ -180,7 +229,7 @@ jstat -gcutil <pid> 1000 10
 也就是说，`jstat` 更像监护仪，不像 CT。  
 它告诉你“病人情况在变差”，但真正要看到内部细节，还得看 Heap Dump。
 
-#### 3.3 `jinfo` / `jcmd`：看配置和运行命令
+#### 4.3 `jinfo` / `jcmd`：看配置和运行命令
 
 `jinfo` 用来查看 JVM 配置信息，例如：
 
@@ -205,7 +254,7 @@ jcmd <pid> VM.command_line
 
 所以如果你要记一个更现代、更通用的工具，`jcmd` 的优先级应该很高。
 
-#### 3.4 `jstack`：抓线程现场
+#### 4.4 `jstack`：抓线程现场
 
 `jstack` 用来生成 Java 线程快照，也就是常说的 Thread Dump。
 
@@ -231,7 +280,7 @@ Found one Java-level deadlock:
 
 这非常关键，因为很多线上死锁排查的第一证据就是这行字。
 
-#### 3.5 `jmap` / `jcmd`：抓堆快照和对象分布
+#### 4.5 `jmap` / `jcmd`：抓堆快照和对象分布
 
 `jmap` 最经典的用途是：
 
@@ -265,7 +314,7 @@ jcmd <pid> GC.heap_dump heapdump.hprof
 因为生成堆快照通常会有额外开销，甚至触发停顿。  
 所以它很有价值，但不应该毫无判断地在线上高峰期乱抓。
 
-#### 3.6 `jhat`：历史上出现过，但现在不要作为主力
+#### 4.6 `jhat`：历史上出现过，但现在不要作为主力
 
 `jhat` 曾经用于分析 Heap Dump，并启动一个 HTTP/HTML 服务让你在浏览器里看结果。
 
@@ -280,7 +329,7 @@ jcmd <pid> GC.heap_dump heapdump.hprof
 - `VisualVM`
 - `JProfiler`
 
-### 4. 第三方工具各自站在哪一层
+### 5. 第三方工具各自站在哪一层
 
 除了 JDK 自带工具，线上排障里最常见的第三方工具还有这些：
 
@@ -336,7 +385,7 @@ jcmd <pid> GC.heap_dump heapdump.hprof
 
 **当你已经在线上机器上，并且需要“边看边验证”时，Arthas 往往非常顺手。**
 
-### 5. 看到不同症状，第一反应应该用什么
+### 6. 看到不同症状，第一反应应该用什么
 
 可以先建立一张很实用的映射表：
 
@@ -349,7 +398,7 @@ jcmd <pid> GC.heap_dump heapdump.hprof
 | 想快速看概况 | `JConsole` | `VisualVM` | 看堆、线程、类加载总体趋势 |
 | 想做更深的线上诊断 | `Arthas` | Heap Dump / Profiler | 进一步定位代码和对象 |
 
-### 6. 一条实用的排障路线
+### 7. 一条实用的排障路线
 
 下面这条路线非常适合线上 JVM 问题的第一轮排查：
 

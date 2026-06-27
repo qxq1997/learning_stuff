@@ -200,22 +200,24 @@ user.behavior.click-0/
 ### Segment 解决的四个工程问题
 
 **问题 1：怎么删除老数据**
-不可能从一个大文件中间“抠掉”。Kafka 的做法是按 Segment 整段删——`retention.ms` / `retention.bytes` 命中了，就把整个老 Segment `unlink` 掉。简单粗暴、O(1)。
+不可能从一个大文件中间“抠掉”。Kafka 的做法是按 Segment 整段删：`retention.ms` / `retention.bytes` 命中后，老 Segment 可以被整体回收。
 
 **问题 2：怎么按 offset 定位一条消息**
-log 文件里消息是变长的（每条带 header + payload），不能直接 seek。Segment 配套一个 `.index` 文件，**稀疏索引**：每隔 ~4KB 一条记录，记录“offset → 文件物理位置”。查找时：
+log 文件里消息是变长的，不能把 offset 直接换算成文件位置。Segment 配套 `.index` 稀疏索引，记录“某个 offset 附近在 log 文件里的物理位置”。查找时：
 
 1. 用 Segment 文件名做二分定位到哪个 Segment
 2. 在 Segment 的 `.index` 里二分找到 ≤ 目标 offset 的最近一条
 3. 从那个物理位置开始顺序扫，扫到目标 offset
 
-稀疏索引的好处：内存占用小（不是每条都索引），定位代价稳定（最多扫 4KB）。
+稀疏索引的好处：不是每条消息都建索引，索引文件小；定位时只需要少量顺序扫描。
 
 **问题 3：怎么按时间定位**
-比如“给我从昨天 14:00 开始的消息”。`.timeindex` 文件提供 “timestamp → offset” 的映射，配合 `.index` 完成两级跳转。
+比如“给我从昨天 14:00 开始的消息”。`.timeindex` 提供 “timestamp → offset” 的稀疏映射，先按时间找到接近的 offset，再配合 `.index` 找到文件位置。
 
 **问题 4：怎么做日志压缩（compact）**
-对 `cleanup.policy=compact` 的 topic（典型如 `__consumer_offsets`），Kafka 会**保留每个 key 的最新值**。Segment 是 compact 的工作单元——后台进程整段读、合并、写出新 Segment、删旧 Segment。
+对 `cleanup.policy=compact` 的 Topic，Kafka 会按 key 保留较新的值。Segment 提供了后台清理的工作单元：读老 Segment、合并 key、写出清理后的新 Segment。
+
+这里先记抽象就够了：**Segment 是把无限日志落到磁盘上的切片单位**。至于稀疏索引、`.timeindex`、retention 和 compact 的细节，第 04 篇存储引擎会继续展开。
 
 ### 为什么是 1GB 默认
 

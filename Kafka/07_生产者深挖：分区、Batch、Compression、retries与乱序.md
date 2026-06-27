@@ -124,7 +124,7 @@ Partition 多的代价：
 - broker 文件句柄、PageCache、元数据、Rebalance 成本上升。
 - key 顺序 Topic 扩分区可能改变 key 到 Partition 的映射。
 
-所以不要机械地说“Partition 越多越好”。对 Producer 来说，太多 Partition 会让小 batch 变多，压缩率下降，请求数上升，吞吐反而变差。
+所以不要机械地说“Partition 越多越好”。对 Producer 来说，==太多 Partition 会让小 batch 变多，压缩率下降，请求数上升，吞吐反而变差。==
 
 ## 第三题：Batch 是 Producer 性能的第一块地基
 

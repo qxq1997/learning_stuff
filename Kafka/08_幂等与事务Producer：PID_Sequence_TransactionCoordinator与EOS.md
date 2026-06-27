@@ -61,11 +61,11 @@ offset 101: batch A
 
 Kafka 的解法是给每个 Producer 批次加上三个身份字段：
 
-| 字段 | 含义 |
-|---|---|
+| 字段                | 含义                          |
+| ----------------- | --------------------------- |
 | PID / Producer ID | broker 分配给 Producer 实例的唯一编号 |
-| Producer Epoch | Producer 的任期号，用来隔离旧实例 |
-| Sequence Number | 每个 PID 在每个 Partition 上递增的序号 |
+| Producer Epoch    | Producer 的任期号，用来隔离旧实例       |
+| Sequence Number   | 每个 PID 在每个 Partition 上递增的序号 |
 
 可以理解成：
 
@@ -336,14 +336,14 @@ T5: offset=100 的处理结果丢了
 
 事务机制里多了几个关键对象。
 
-| 对象 | 作用 |
-|---|---|
-| `transactional.id` | 应用配置的稳定事务身份 |
-| PID / Producer Epoch | Kafka 分配的内部写入身份和任期 |
-| Transaction Coordinator | 管理事务状态的 broker |
-| `__transaction_state` | 内部 topic，持久化事务元数据 |
-| transaction marker | 写到业务 Partition 的 commit / abort 控制消息 |
-| LSO | Last Stable Offset，read_committed 消费者最多能读到的位置 |
+| 对象                      | 作用                                            |
+| ----------------------- | --------------------------------------------- |
+| `transactional.id`      | 应用配置的稳定事务身份                                   |
+| PID / Producer Epoch    | Kafka 分配的内部写入身份和任期                            |
+| Transaction Coordinator | 管理事务状态的 broker                                |
+| `__transaction_state`   | 内部 topic，持久化事务元数据                             |
+| transaction marker      | 写到业务 Partition 的 commit / abort 控制消息          |
+| LSO                     | Last Stable Offset，read_committed 消费者最多能读到的位置 |
 
 注意 `transactional.id` 和 PID 的关系：
 

@@ -96,6 +96,8 @@ Kafka 选稀疏索引：
 
 参数 `index.interval.bytes` 控（默认 4KB）。所以一个 1GB 段大概有 25 万条索引项，每条几个字节——一段索引几 MB，全部 mmap 进 PageCache，访问就是内存随机读。
 
+实际 `.index` 里记录的是**相对 offset**。比如 Segment 文件名是 `00000000000000123456.log`，它的 base offset 是 `123456`；索引里 relative offset `37`，对应的绝对 offset 就是 `123456 + 37 = 123493`。这样索引项可以更小，Segment 文件名负责提供基准点。
+
 ### 查找路径
 
 要按 offset 找一条消息：
@@ -108,7 +110,7 @@ Kafka 选稀疏索引：
 
 ### .timeindex：按时间反查
 
-类似的稀疏映射，`timestamp → offset`，让 “给我 14:00 之后的消息” 这种查询能两级跳转：先 timeindex 找到 offset，再 index 找到位置。Consumer 端 `seekToTimestamp` 就是这条路。
+类似的稀疏映射，`timestamp → offset`，让 “给我 14:00 之后的消息” 这种查询能两级跳转：先 timeindex 找到 offset，再 index 找到位置。Consumer 端通常是先用 `offsetsForTimes` 找 offset，再 `seek` 到对应位置。
 
 ### 为什么 index 用 mmap
 
@@ -118,6 +120,39 @@ Kafka 的 index 是 mmap 进进程地址空间的——好处：
 - 进程崩重启，索引内容还在 PageCache 里
 - 二分查找直接在内存上做，不过 syscall
 
+### Segment、retention 和 compact 的关系
+
+Segment 还决定了 Kafka 怎么清理数据。
+
+对普通删除型 Topic，Kafka 不是消费一条删一条，而是按保留策略清理老 Segment：
+
+```text
+00000000000000000000.log      过期 -> 删除整个 Segment
+00000000000000123456.log      未过期 -> 保留
+00000000000000987654.log      active segment -> 继续写
+```
+
+所以 retention 的真实粒度是 Segment。即使某些消息已经过期，只要它们还在 active segment 里，也通常要等这个段滚动成老 Segment 后才能被清理。
+
+对 `cleanup.policy=compact` 的 Topic，compact 不是 gzip / zstd 那种压缩体积，而是**按 key 去重保留较新的值**：
+
+```text
+k1 -> old value
+k2 -> value
+k1 -> new value
+
+compact 后最终保留：
+k2 -> value
+k1 -> new value
+```
+
+Log Cleaner 会挑选一批老 Segment，读取其中的 key，合并出较新的记录，写成新的 Segment，再替换旧 Segment。几个边界要记住：
+
+- compact 是后台异步发生的，不是写入后立刻清掉旧值。
+- active segment 通常不会马上 compact。
+- compact 后也不保证整个 Topic 里永远只有每个 key 一条，只能保证旧版本最终会被清理。
+- 如果写入 tombstone，也就是 key 对应 value=null，Kafka 会保留一段删除标记，之后最终把这个 key 清掉。
+
 ## 第四锤：PageCache —— Kafka 性能的真正秘密武器
 
 这一节是 Kafka 设计哲学和其他存储系统**最不一样**的地方，也是面试最容易被追问的地方。
@@ -126,12 +161,12 @@ Kafka 的 index 是 mmap 进进程地址空间的——好处：
 
 对比一下：
 
-| 系统 | 数据缓存在哪 |
-|---|---|
-| MySQL InnoDB | Buffer Pool（应用层，自己管理）|
-| Redis | 进程堆内（数据本身就在内存）|
-| HBase | BlockCache（应用层）|
-| **Kafka** | **PageCache（OS 内核，Kafka 完全不管）**|
+| 系统           | 数据缓存在哪                          |
+| ------------ | ------------------------------- |
+| MySQL InnoDB | Buffer Pool（应用层，自己管理）           |
+| Redis        | 进程堆内（数据本身就在内存）                  |
+| HBase        | BlockCache（应用层）                 |
+| **Kafka**    | **PageCache（OS 内核，Kafka 完全不管）** |
 
 Kafka 没有 Buffer Pool。它写的时候写到 PageCache、读的时候读 PageCache，**完全把缓存委托给 OS**。
 
